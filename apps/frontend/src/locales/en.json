@@ -60,14 +60,20 @@
     "goldenBadge": "✓ golden"
   },
   "evaluate": {
-    "back": "← Back",
-    "prevClip": "Previous clip",
-    "nextClip": "Next clip",
     "loading": "Loading…",
     "allDone": "All done!",
     "allDoneDescription": "You've evaluated all clips for this dimension. Come back later for more.",
     "startOver": "Start over",
+    "evaluateOtherDimension": "Evaluate another dimension",
     "backToList": "Back to list",
+    "chooseDimensionTitle": "What do you want to evaluate?",
+    "chooseDimensionSubtitle": "Pick one — you can switch to a different one at any time.",
+    "dimensionHint": {
+      "transcription": "Check whether the transcript matches what's said",
+      "gender": "Check whether the speaker's gender is correct",
+      "dialect": "Check whether the detected dialect is correct"
+    },
+    "switchDimensionAction": "Switch",
     "genderAnnotation": "Gender annotation",
     "genderInstruction": "Listen to the clip and vote whether this gender annotation is correct.",
     "dialectDetection": "Dialect detection",

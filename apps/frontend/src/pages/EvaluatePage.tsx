@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api';
 import { AudioPlayer } from '../components/AudioPlayer';
@@ -37,12 +37,11 @@ interface Props {
 
 export function EvaluatePage({ username }: Props) {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const currentClipId = searchParams.get('clipId');
-  // Dimension is sourced from the URL, not its own state — that's what lets switching
-  // tabs stay a pure UI change (no clip refetch) while still being a shareable/
-  // bookmarkable/back-button-safe part of the page's address.
+  // Dimension is sourced from the URL, not its own state — that's what makes the
+  // in-progress flow shareable/bookmarkable/back-button-safe. Its absence also
+  // doubles as the signal to show the dimension picker screen below.
   const dimensionParam = searchParams.get('dimension');
   const dimension: Dimension = isDimension(dimensionParam) ? dimensionParam : 'transcription';
 
@@ -135,7 +134,9 @@ export function EvaluatePage({ username }: Props) {
     }
   }, [username]);
 
-  // React to URL clipId changes (browser back/forward navigation)
+  // React to URL clipId/dimension changes (browser back/forward navigation,
+  // and picking a dimension on the picker screen below). With no dimension
+  // chosen yet, do nothing — the picker screen is what's shown in that case.
   useEffect(() => {
     if (selfNavRef.current) {
       selfNavRef.current = false;
@@ -143,21 +144,29 @@ export function EvaluatePage({ username }: Props) {
     }
     if (currentClipId) {
       loadClip(currentClipId);
-    } else {
+    } else if (dimensionParam) {
       loadNext();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentClipId]);
+  }, [currentClipId, dimensionParam]);
 
-  // Switching dimension tabs is a pure UI change: the current clip's votes/userVotes
-  // already cover every dimension, so there's no need to fetch a different clip —
-  // just update the URL (replace, so it doesn't clutter clip-to-clip browser history)
-  // and clear any dimension-specific transient UI (edit mode, dialect picker, etc.).
-  const switchDimension = (d: Dimension) => {
+  // Dimension picking is a one-time step right after "Evaluate" (see the
+  // dimensionParam-less render branch below), not a tab you flip mid-flow —
+  // feedback was that in-flow tabs read as "this will advance to the next
+  // dimension on the same clip", which isn't what voting does. `replace: true`
+  // because this is the same logical step as landing on /evaluate, not a new one.
+  const chooseDimension = (d: Dimension) => {
+    setSearchParams({ dimension: d }, { replace: true });
+  };
+
+  // Explicit escape hatch back to the dimension picker, so switching what you're
+  // evaluating is unmistakably "start a new evaluation flow", not "stay on this
+  // clip but change what the buttons mean".
+  const backToDimensionPicker = () => {
     resetUi();
-    const next = new URLSearchParams(searchParams);
-    next.set('dimension', d);
-    setSearchParams(next, { replace: true });
+    setState(null);
+    setDone(false);
+    setSearchParams({}, { replace: true });
   };
 
   const skip = () => {
@@ -348,6 +357,29 @@ export function EvaluatePage({ username }: Props) {
     setTimeout(() => setCopied(false), 1500);
   };
 
+  // No dimension chosen yet: this is the very first step after clicking
+  // "Evaluate" — pick what you're evaluating before any clip loads.
+  if (!dimensionParam) {
+    return (
+      <div className="max-w-xl mx-auto px-4 py-12">
+        <h2 className="text-xl font-bold text-gray-800 mb-1 text-center">{t('evaluate.chooseDimensionTitle')}</h2>
+        <p className="text-sm text-gray-500 mb-8 text-center">{t('evaluate.chooseDimensionSubtitle')}</p>
+        <div className="grid gap-4 sm:grid-cols-3">
+          {DIMENSIONS.map((d) => (
+            <button
+              key={d}
+              onClick={() => chooseDimension(d)}
+              className="bg-white border border-gray-200 hover:border-brand-400 hover:shadow-md rounded-2xl p-6 text-center transition"
+            >
+              <div className="text-lg font-semibold text-gray-800 mb-1">{t(`dimension.${d}`)}</div>
+              <div className="text-xs text-gray-500">{t(`evaluate.dimensionHint.${d}`)}</div>
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64 text-gray-400">{t('evaluate.loading')}</div>
@@ -361,6 +393,7 @@ export function EvaluatePage({ username }: Props) {
         <h2 className="text-2xl font-bold text-gray-800 mb-2">{t('evaluate.allDone')}</h2>
         <p className="text-gray-500 mb-6">{t('evaluate.allDoneDescription')}</p>
         <button onClick={() => loadNext()} className="btn-primary mr-3">{t('evaluate.startOver')}</button>
+        <button onClick={backToDimensionPicker} className="btn-secondary mr-3">{t('evaluate.evaluateOtherDimension')}</button>
         <Link to="/list" className="btn-secondary">{t('evaluate.backToList')}</Link>
       </div>
     );
@@ -369,39 +402,19 @@ export function EvaluatePage({ username }: Props) {
   return (
     <div className="max-w-2xl mx-auto px-4 py-6">
       {/* Header */}
-      <div className="flex items-center gap-2 mb-6">
-        <Link to="/" className="text-brand-600 hover:underline text-sm">{t('evaluate.back')}</Link>
-        <span className="text-gray-300">|</span>
+      <div className="flex items-center justify-end gap-2 mb-6 text-xs">
+        <span className="px-2.5 py-1 rounded-full bg-gray-100 text-gray-600 font-medium">
+          {t(`dimension.${dimension}`)}
+        </span>
         <button
-          onClick={() => navigate(-1)}
-          className="text-gray-500 hover:text-gray-800 text-lg leading-none"
-          title={t('evaluate.prevClip')}
-        >‹</button>
-        <button
-          onClick={() => navigate(1)}
-          className="text-gray-500 hover:text-gray-800 text-lg leading-none"
-          title={t('evaluate.nextClip')}
-        >›</button>
+          onClick={backToDimensionPicker}
+          className="text-gray-400 hover:text-brand-600 hover:underline"
+        >
+          {t('evaluate.switchDimensionAction')}
+        </button>
       </div>
 
       {error && <div className="text-red-500 text-sm mb-4 p-3 bg-red-50 rounded-lg">{error}</div>}
-
-      {/* Dimension selector */}
-      <div className="flex gap-2 mb-6">
-        {DIMENSIONS.map((d) => (
-          <button
-            key={d}
-            onClick={() => switchDimension(d)}
-            className={`px-4 py-1.5 rounded-full text-sm font-medium transition ${
-              dimension === d
-                ? 'bg-brand-600 text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}
-          >
-            {t(`dimension.${d}`)}
-          </button>
-        ))}
-      </div>
 
       {state && (
         <div className="space-y-6">

@@ -60,14 +60,20 @@
     "goldenBadge": "✓ daurat"
   },
   "evaluate": {
-    "back": "← Enrere",
-    "prevClip": "Clip anterior",
-    "nextClip": "Clip següent",
     "loading": "Carregant…",
     "allDone": "Tot fet!",
     "allDoneDescription": "Heu avaluat tots els clips per a aquesta dimensió. Torneu més endavant per veure'n més.",
     "startOver": "Tornar a començar",
+    "evaluateOtherDimension": "Avalua una altra dimensió",
     "backToList": "Tornar a la llista",
+    "chooseDimensionTitle": "Què vols avaluar?",
+    "chooseDimensionSubtitle": "Tria'n una — podràs canviar a una altra en qualsevol moment.",
+    "dimensionHint": {
+      "transcription": "Comprova si la transcripció coincideix amb el que es diu",
+      "gender": "Comprova si el gènere de qui parla és correcte",
+      "dialect": "Comprova si el dialecte detectat és correcte"
+    },
+    "switchDimensionAction": "Canvia",
     "genderAnnotation": "Anotació de gènere",
     "genderInstruction": "Escolteu el clip i voteu si aquesta anotació de gènere és correcta.",
     "dialectDetection": "Detecció de dialecte",

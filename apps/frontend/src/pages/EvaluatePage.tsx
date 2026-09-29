@@ -364,8 +364,12 @@ export function EvaluatePage({ username }: Props) {
       <div className="max-w-xl mx-auto px-4 py-12">
         <h2 className="text-xl font-bold text-gray-800 mb-1 text-center">{t('evaluate.chooseDimensionTitle')}</h2>
         <p className="text-sm text-gray-500 mb-8 text-center">{t('evaluate.chooseDimensionSubtitle')}</p>
-        <div className="grid gap-4 sm:grid-cols-3">
-          {DIMENSIONS.map((d) => (
+        <div className="grid gap-4 sm:grid-cols-2">
+          {/* Gender is hidden here pending an internal discussion about it being
+              a controversial dimension to evaluate — the capability itself (voting,
+              stats, ?dimension=gender deep links) is untouched, just not offered
+              as a starting choice. */}
+          {DIMENSIONS.filter((d) => d !== 'gender').map((d) => (
             <button
               key={d}
               onClick={() => chooseDimension(d)}

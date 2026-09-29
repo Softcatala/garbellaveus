@@ -84,7 +84,9 @@ export function HomePage() {
 
       {stats && stats.dimensions.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          {stats.dimensions.map(({ dimension, evaluated, golden, evaluatedHours, goldenHours }) => (
+          {/* Gender is hidden here too while it's not offered as an evaluation
+              choice (see EvaluatePage) — the stats themselves are untouched. */}
+          {stats.dimensions.filter(({ dimension }) => dimension !== 'gender').map(({ dimension, evaluated, golden, evaluatedHours, goldenHours }) => (
             <div key={dimension} className="bg-white border border-gray-200 rounded-xl p-4">
               <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
                 {t(`dimension.${dimension}`, { defaultValue: dimension })}

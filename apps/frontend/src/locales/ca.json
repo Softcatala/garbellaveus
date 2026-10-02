@@ -27,7 +27,7 @@
     "searchPlaceholder": "Cercar transcripcions o ID de clip…",
     "loading": "Carregant…",
     "evaluated": "avaluats",
-    "golden": "daurats",
+    "golden": "validats",
     "noClipsFound": "No s'han trobat clips.",
     "prevPage": "← Anterior",
     "nextPage": "Següent →",
@@ -35,9 +35,10 @@
     "noTranscription": "(sense transcripció)",
     "via": "via {{origin}}",
     "tar": "tar-{{file}}",
-    "goldenBadge": "✓ daurat",
-    "hoursProgress": "Hores validades",
-    "hoursSummary": "{{golden}}h daurades, {{evaluated}}h avaluades de {{total}}h en total"
+    "goldenBadge": "✓ validat",
+    "hoursProgress": "Progrés (hores)",
+    "validatedExplanation": "Validat: confirmat per almenys dues persones. Són els que entraran al conjunt de dades final.",
+    "hoursSummary": "{{golden}}h validades, {{evaluated}}h avaluades de {{total}}h en total"
   },
   "detail": {
     "backToList": "← Tornar a la llista",
@@ -59,7 +60,7 @@
     "candidate2": "Candidat 2",
     "dataset": "(conjunt de dades)",
     "votes": "{{net}} vots",
-    "goldenBadge": "✓ daurat"
+    "goldenBadge": "✓ validat"
   },
   "evaluate": {
     "loading": "Carregant…",
@@ -83,7 +84,7 @@
     "noDialect": "Encara no hi ha cap dialecte suggerit per a aquest clip — escolta'l i tria el que sentis a sota.",
     "netVotes": "Vots nets: {{count}}",
     "votesCount": "{{net}} vots",
-    "goldenSuffix": " ✓ daurat",
+    "goldenSuffix": " ✓ validat",
     "cancel": "Cancel·la",
     "modelsAgree": "★ {{count}} models coincideixen",
     "noTranscription": "No hi ha transcripció disponible per a aquest clip.",
@@ -121,7 +122,7 @@
     "copied": "✓ copiat",
     "audioNotIndexed": "L'àudio no s'ha indexat. Executeu l'script d'indexació per activar la reproducció al navegador.",
     "openYouTube": "▶ Obre la font a YouTube",
-    "goldenBadge": "✓ daurat",
+    "goldenBadge": "✓ validat",
     "flaggedIrrelevant": "✗ marcat com a irrellevant",
     "alreadyVoted": "Ja heu votat {{emoji}} en aquest clip per a {{dimension}}. Votar de nou actualitzarà la vostra elecció.",
     "correctedDimension": "Heu corregit {{dimension}}: ara es mostra {{value}}. Votar de nou actualitzarà la vostra elecció."

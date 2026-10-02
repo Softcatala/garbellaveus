@@ -115,6 +115,9 @@ export function HomePage() {
           ))}
         </div>
       )}
+      {stats && stats.dimensions.length > 0 && (
+        <p className="-mt-3 text-xs text-gray-400 text-center">{t('list.validatedExplanation')}</p>
+      )}
     </div>
   );
 }

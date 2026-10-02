@@ -9,7 +9,9 @@
     "title": "GarbellaVeus",
     "p1Pre": "Want to help us improve Catalan speech technology? Evaluate voice clips from the ",
     "p1Link": "Catalan YouTube Speech",
-    "p1Post": " dataset, extracted from plenary session videos (CC-BY). This will let us add up to 920 hours of validated Catalan speech to the open datasets.",
+    "p1Post": " dataset, extracted from plenary session videos, with audio under the ",
+    "p1LicenseLink": "CC-BY",
+    "p1PostLicense": " license (free to reuse as long as credit is given). This will let us add up to 920 hours of validated Catalan speech to the open datasets.",
     "p2": "It's simple: listen to the clips and vote on whether the transcription and dialect are correct. If you spot errors, you can also contribute by suggesting a more accurate transcription or identifying the correct dialect.",
     "p3Pre": "We've also included the ",
     "p3Link": "transcriptions automatically verified by the BSC",
@@ -132,6 +134,7 @@
     "title": "About this project",
     "datasetTitle": "The dataset",
     "datasetText": "This platform hosts human evaluation of the Catalan YouTube Speech Corpus: 231,684 short clips of spontaneous Catalan speech, automatically extracted from public YouTube videos by Softcatalà, with audio under a CC-BY license and transcripts and metadata under MIT. Each clip includes an automatic transcription (some already filtered to higher confidence by the Barcelona Supercomputing Center) and, for some clips, a detected dialect; corrections and votes from the community are collected here.",
+    "licenseText": "The audio inherits the CC-BY license of the original YouTube videos: it can be freely copied, adapted and reused, even commercially, as long as the original videos are credited. The MIT license allows the same for the transcripts and metadata.",
     "whyTitle": "Why it needs evaluation",
     "whyText": "The transcripts were produced automatically, not reviewed by a person, so the dataset is raw and unvalidated, useful for large-scale training, but not a reliable benchmark on its own. Where the two automatic candidates agree, the text is usually trustworthy; where they diverge, the clip is often noisy, overlapping speech, or otherwise hard to transcribe.",
     "goalTitle": "What we're doing here",
@@ -139,7 +142,9 @@
     "linksTitle": "Learn more",
     "linkDataset": "Catalan YouTube Speech Corpus on Hugging Face",
     "linkBSC": "Distilled Catalan YouTube Speech (BSC) on Hugging Face",
-    "linkSoftcatala": "Softcatalà"
+    "linkSoftcatala": "Softcatalà",
+    "linkCCBY": "CC-BY 3.0 license (Creative Commons)",
+    "linkMIT": "MIT license"
   },
   "dimension": {
     "transcription": "Transcription",

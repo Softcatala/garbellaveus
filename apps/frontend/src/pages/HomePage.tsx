@@ -51,6 +51,15 @@ export function HomePage() {
             {t('home.p1Link')}
           </a>
           {t('home.p1Post')}
+          <a
+            href="https://creativecommons.org/licenses/by/3.0/deed.ca"
+            target="_blank"
+            rel="noreferrer"
+            className="text-brand-600 hover:underline"
+          >
+            {t('home.p1LicenseLink')}
+          </a>
+          {t('home.p1PostLicense')}
         </p>
         <p className="text-gray-600 leading-relaxed">{t('home.p2')}</p>
         <p className="text-gray-600 leading-relaxed">

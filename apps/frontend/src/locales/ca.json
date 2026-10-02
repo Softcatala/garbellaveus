@@ -9,7 +9,9 @@
     "title": "GarbellaVeus",
     "p1Pre": "Vols ajudar-nos a millorar la tecnologia de veu en català? Avalua els talls de veu del ",
     "p1Link": "Catalan YouTube Speech",
-    "p1Post": ", un conjunt de dades extret de vídeos de plenaris (CC-BY). Això ens permetrà afegir fins a 920 hores de parla catalana validada als conjunts oberts.",
+    "p1Post": ", un conjunt de dades extret de vídeos de plenaris, amb l'àudio sota la llicència ",
+    "p1LicenseLink": "CC-BY",
+    "p1PostLicense": " (es pot reutilitzar lliurement, sempre que se'n reconegui l'autoria). Això ens permetrà afegir fins a 920 hores de parla catalana validada als conjunts oberts.",
     "p2": "És molt fàcil: escolta els talls i vota si la transcripció i el dialecte són correctes. Si hi detectes errors, també pots contribuir-hi proposant una transcripció més acurada o identificant-ne el dialecte correcte.",
     "p3Pre": "També hem inclòs les ",
     "p3Link": "transcripcions verificades de manera automàtica pel BSC",
@@ -132,6 +134,7 @@
     "title": "Sobre aquest projecte",
     "datasetTitle": "El conjunt de dades",
     "datasetText": "Aquesta plataforma allotja l'avaluació humana del Catalan YouTube Speech Corpus: 231.684 clips curts de parla catalana espontània, extrets automàticament de vídeos públics de YouTube per Softcatalà, amb l'àudio sota llicència CC-BY i les transcripcions i metadades sota llicència MIT. Cada clip inclou una transcripció automàtica (algunes, ja filtrades amb més confiança pel Barcelona Supercomputing Center) i, en alguns clips, el dialecte detectat; aquí es recullen les correccions i els vots que hi aporta la comunitat.",
+    "licenseText": "L'àudio hereta la llicència CC-BY dels vídeos de YouTube d'origen: es pot copiar, adaptar i reutilitzar lliurement, fins i tot per a usos comercials, sempre que se'n citi l'autoria als vídeos originals. La llicència MIT permet el mateix per a les transcripcions i les metadades.",
     "whyTitle": "Per què cal avaluar-lo",
     "whyText": "Les transcripcions es van generar automàticament, sense revisió humana, de manera que el conjunt de dades és brut i no validat: útil per a l'entrenament a gran escala, però encara no un referent fiable per si sol. Quan les dues transcripcions automàtiques coincideixen, el text sol ser fiable; quan divergeixen, sovint es tracta d'un clip sorollós, amb parla superposada o difícil de transcriure per algun altre motiu.",
     "goalTitle": "Què fem aquí",
@@ -139,7 +142,9 @@
     "linksTitle": "Més informació",
     "linkDataset": "Catalan YouTube Speech Corpus a Hugging Face",
     "linkBSC": "Distilled Catalan YouTube Speech (BSC) a Hugging Face",
-    "linkSoftcatala": "Softcatalà"
+    "linkSoftcatala": "Softcatalà",
+    "linkCCBY": "Llicència CC-BY 3.0 (Creative Commons)",
+    "linkMIT": "Llicència MIT"
   },
   "dimension": {
     "transcription": "Transcripció",

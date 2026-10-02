@@ -21,6 +21,7 @@ export function AboutPage() {
         <section>
           <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">{t('about.datasetTitle')}</h2>
           <p>{t('about.datasetText')}</p>
+          <p className="mt-3">{t('about.licenseText')}</p>
         </section>
 
         <section>
@@ -54,6 +55,26 @@ export function AboutPage() {
                 className="text-brand-600 hover:underline"
               >
                 {t('about.linkBSC')}
+              </a>
+            </li>
+            <li>
+              <a
+                href="https://creativecommons.org/licenses/by/3.0/deed.ca"
+                target="_blank"
+                rel="noreferrer"
+                className="text-brand-600 hover:underline"
+              >
+                {t('about.linkCCBY')}
+              </a>
+            </li>
+            <li>
+              <a
+                href="https://opensource.org/license/mit"
+                target="_blank"
+                rel="noreferrer"
+                className="text-brand-600 hover:underline"
+              >
+                {t('about.linkMIT')}
               </a>
             </li>
             <li>

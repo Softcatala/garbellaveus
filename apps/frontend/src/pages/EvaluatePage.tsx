@@ -51,7 +51,10 @@ export function EvaluatePage({ username }: Props) {
   const [voting, setVoting] = useState(false);
   const [error, setError] = useState('');
   const [selectedTranscriptionId, setSelectedTranscriptionId] = useState<number | null>(null);
-  const [editMode, setEditMode] = useState(false);
+  // Two-step transcription flow, mirroring dialect's picker: "Incorrect" opens
+  // this instead of immediately voting, so editing only ever happens once the
+  // evaluator has explicitly said the current text is wrong.
+  const [transcriptionCorrecting, setTranscriptionCorrecting] = useState(false);
   const [editText, setEditText] = useState('');
   const [copied, setCopied] = useState(false);
   const [dialectPicker, setDialectPicker] = useState(false);
@@ -67,7 +70,7 @@ export function EvaluatePage({ username }: Props) {
 
   function resetUi() {
     setVoting(false);
-    setEditMode(false);
+    setTranscriptionCorrecting(false);
     setEditText('');
     setError('');
     setSelectedTranscriptionId(null);
@@ -231,22 +234,33 @@ export function EvaluatePage({ username }: Props) {
       return;
     }
 
+    // Transcription: "incorrect" opens the correction step below instead of
+    // voting immediately — saveCorrection/declineCorrection handle the actual
+    // votes once the evaluator picks Save or Never ask there.
+    if (dimension === 'transcription' && value === -1 && !transcriptionCorrecting) {
+      const best = state.uniqueTranscriptions[0];
+      setEditText(best?.text ?? state.clip.candidate1 ?? state.clip.candidate2 ?? '');
+      setTranscriptionCorrecting(true);
+      return;
+    }
+
     setVoting(true);
     try {
       let targetId: string | undefined;
 
       if (dimension === 'transcription') {
+        // Only reachable with value === 1 (confirming the displayed text as-is) —
+        // the -1 path is intercepted above. Dataset candidates aren't persisted
+        // as a Transcription row until someone votes on them, so create one here
+        // if there's no existing row yet to target.
         const best = state.uniqueTranscriptions[0];
         let voteTargetId = selectedTranscriptionId;
-        const submittedText = editMode ? editText.trim() : (best?.text ?? state.clip.candidate1 ?? state.clip.candidate2 ?? '');
-        // Create a new transcription record whenever the text differs from best (edit) or there's no best (candidate)
-        if (submittedText && (!best || submittedText !== best.text)) {
-          const newT = await api.createTranscription({
-            clipId: state.clip.clipId,
-            origin: 'human',
-            text: submittedText,
-          });
-          voteTargetId = newT.id;
+        if (voteTargetId == null && !best) {
+          const text = state.clip.candidate1 ?? state.clip.candidate2 ?? '';
+          if (text) {
+            const newT = await api.createTranscription({ clipId: state.clip.clipId, origin: 'human', text });
+            voteTargetId = newT.id;
+          }
         }
         targetId = voteTargetId != null ? String(voteTargetId) : undefined;
       } else if (dimension === 'gender') {
@@ -269,6 +283,57 @@ export function EvaluatePage({ username }: Props) {
         await api.castVote({ clipId: state.clip.clipId, dimension, targetId: selectedDialect, username, value: 1 });
       }
 
+      loadNext();
+    } catch (e) {
+      setError(String(e));
+      setVoting(false);
+    }
+  };
+
+  // Shared by saveCorrection/declineCorrection: the transcription row to cast
+  // the "incorrect" downvote against, creating one from the raw dataset
+  // candidate first if this clip has never had a Transcription row voted on.
+  const resolveOriginalTranscriptionId = async (): Promise<string | undefined> => {
+    if (!state) return undefined;
+    if (selectedTranscriptionId != null) return String(selectedTranscriptionId);
+    const best = state.uniqueTranscriptions[0];
+    if (best) return String(best.representativeId);
+    const text = (state.clip.candidate1 ?? state.clip.candidate2 ?? '').trim();
+    if (!text) return undefined;
+    const created = await api.createTranscription({ clipId: state.clip.clipId, origin: 'human', text });
+    return String(created.id);
+  };
+
+  const saveCorrection = async () => {
+    if (!state || voting) return;
+    const corrected = editText.trim();
+    if (!corrected) return;
+    setVoting(true);
+    try {
+      const originalId = await resolveOriginalTranscriptionId();
+      if (originalId) {
+        await api.castVote({ clipId: state.clip.clipId, dimension: 'transcription', targetId: originalId, username, value: -1 });
+      }
+      const newT = await api.createTranscription({ clipId: state.clip.clipId, origin: 'human', text: corrected });
+      await api.castVote({ clipId: state.clip.clipId, dimension: 'transcription', targetId: String(newT.id), username, value: 1 });
+      loadNext();
+    } catch (e) {
+      setError(String(e));
+      setVoting(false);
+    }
+  };
+
+  // "Never ask [me to correct this] again": register that the current text is
+  // wrong without requiring a fix, then move on — unlike Skip, this still casts
+  // the incorrect vote so other evaluators see it needs work.
+  const declineCorrection = async () => {
+    if (!state || voting) return;
+    setVoting(true);
+    try {
+      const originalId = await resolveOriginalTranscriptionId();
+      if (originalId) {
+        await api.castVote({ clipId: state.clip.clipId, dimension: 'transcription', targetId: originalId, username, value: -1 });
+      }
       loadNext();
     } catch (e) {
       setError(String(e));
@@ -323,10 +388,9 @@ export function EvaluatePage({ username }: Props) {
     : (state?.votes.filter((v) => v.dimension === dimension).reduce((max, v) => Math.max(max, v.netVotes), 0) ?? 0);
 
   const bestTx = state?.uniqueTranscriptions[0];
-  // Stable pre-edit baseline — unlike activeText, this never shifts to editText,
-  // so comparing against it while editing actually detects a change.
+  // The pre-correction baseline text, used both for the read-only step-1 display
+  // and to tell whether the step-2 textarea actually changed anything.
   const originalText = bestTx?.text ?? state?.clip.candidate1 ?? state?.clip.candidate2 ?? '';
-  const activeText = editMode ? editText : originalText;
 
   // Vote button labels default to generic Correct/Incorrect, but restate the
   // specific value being confirmed for dimensions where a bare "Correct" is
@@ -339,8 +403,6 @@ export function EvaluatePage({ username }: Props) {
       ? t('evaluate.genderCorrectMale')
       : dimension === 'gender' && genderResolved.value === 'female'
       ? t('evaluate.genderCorrectFemale')
-      : dimension === 'transcription' && editMode
-      ? t('evaluate.saveAsCorrect')
       : t('evaluate.correct');
   const incorrectLabel =
     dimension === 'dialect' && dialectResolved.value
@@ -479,7 +541,7 @@ export function EvaluatePage({ username }: Props) {
 
           {/* Dimension-specific content */}
           {dimension === 'transcription' && (() => {
-            if (!activeText) {
+            if (!originalText) {
               return <p className="text-sm text-gray-400">{t('evaluate.noTranscription')}</p>;
             }
 
@@ -487,9 +549,15 @@ export function EvaluatePage({ username }: Props) {
               ? state.votes.find((v) => v.dimension === 'transcription' && v.targetId === String(bestTx.representativeId))
               : null;
 
-            if (editMode) {
+            // Step 2: the evaluator said the text above was wrong — collect a
+            // correction (or let them decline one) instead of showing it read-only.
+            if (transcriptionCorrecting) {
+              const trimmedEdit = editText.trim();
               return (
                 <div className="bg-white rounded-2xl border border-brand-200 p-5">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    {t('evaluate.correctionPrompt')}
+                  </label>
                   <textarea
                     ref={(el) => { if (el) { el.style.height = 'auto'; el.style.height = `${el.scrollHeight}px`; } }}
                     value={editText}
@@ -502,18 +570,43 @@ export function EvaluatePage({ username }: Props) {
                     className="w-full border border-brand-300 rounded-lg px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-300 resize-none overflow-hidden"
                     autoFocus
                   />
-                  <div className="flex items-center gap-2 mt-2">
-                    <span className="text-xs text-gray-400 flex-1">
-                      {editText.trim() !== originalText
-                        ? t('evaluate.willSave')
-                        : t('evaluate.noChanges')}
-                    </span>
+                  <div className="grid grid-cols-3 gap-3 mt-3">
                     <button
-                      onClick={() => { setEditMode(false); setEditText(''); }}
-                      className="text-xs text-gray-400 hover:text-gray-600"
+                      onClick={saveCorrection}
+                      disabled={voting || !trimmedEdit || trimmedEdit === originalText}
+                      className={`px-2 py-2.5 rounded-lg transition font-semibold text-sm sm:text-base ${
+                        voting || !trimmedEdit || trimmedEdit === originalText
+                          ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                          : 'bg-green-600 hover:bg-green-700 text-white'
+                      }`}
                     >
-                      {t('evaluate.cancel')}
+                      {t('evaluate.saveCorrection')}
                     </button>
+                    <button
+                      onClick={skip}
+                      disabled={voting}
+                      className="px-2 bg-gray-100 hover:bg-gray-200 disabled:opacity-40 text-gray-600 font-medium py-2.5 rounded-lg transition text-sm sm:text-base"
+                    >
+                      {t('evaluate.skip')}
+                    </button>
+                    <button
+                      onClick={declineCorrection}
+                      disabled={voting}
+                      className="px-2 bg-gray-100 hover:bg-gray-200 disabled:opacity-40 text-gray-600 font-medium py-2.5 rounded-lg transition text-sm sm:text-base leading-tight"
+                    >
+                      {t('evaluate.neverAskCorrection')}
+                    </button>
+                  </div>
+                  <div className="mt-4 pt-4 border-t border-gray-100">
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                      {t('evaluate.transcriptionGuidelinesTitle')}
+                    </p>
+                    <ul className="text-xs text-gray-500 list-disc list-inside space-y-1.5">
+                      <li>{t('evaluate.transcriptionGuideline1')}</li>
+                      <li>{t('evaluate.transcriptionGuideline2')}</li>
+                      <li>{t('evaluate.transcriptionGuideline3')}</li>
+                      <li>{t('evaluate.transcriptionGuideline4')}</li>
+                    </ul>
                   </div>
                 </div>
               );
@@ -546,15 +639,7 @@ export function EvaluatePage({ username }: Props) {
                     )}
                   </div>
                 )}
-                <div className="flex items-start gap-3">
-                  <p className="text-sm text-gray-800 leading-relaxed flex-1">{activeText}</p>
-                  <button
-                    onClick={() => { setEditMode(true); setEditText(originalText); }}
-                    className="flex-shrink-0 text-xs text-brand-500 hover:text-brand-700 hover:underline mt-0.5"
-                  >
-                    {t('evaluate.edit')}
-                  </button>
-                </div>
+                <p className="text-sm text-gray-800 leading-relaxed">{originalText}</p>
               </div>
             );
           })()}
@@ -674,21 +759,21 @@ export function EvaluatePage({ username }: Props) {
             </div>
           )}
 
-          {/* Vote buttons — hidden while the dialect correction picker or the
-              "suggest one from scratch" picker (which has its own Suggest+Skip
-              row above) is the active UI */}
-          {!dialectPicker && !(dimension === 'dialect' && !dialectResolved.value) && (
+          {/* Vote buttons — hidden while the dialect correction picker, the dialect
+              "suggest one from scratch" picker, or the transcription correction
+              step (each of which has its own action row) is the active UI */}
+          {!dialectPicker && !(dimension === 'dialect' && !dialectResolved.value) && !(dimension === 'transcription' && transcriptionCorrecting) && (
             <div className="flex gap-3">
               <button
                 onClick={() => vote(1)}
-                disabled={voting || (dimension === 'transcription' && !activeText.trim()) || (dimension === 'gender' && !genderResolved.value)}
+                disabled={voting || (dimension === 'transcription' && !originalText.trim()) || (dimension === 'gender' && !genderResolved.value)}
                 className="flex-1 bg-green-600 hover:bg-green-700 disabled:opacity-40 text-white font-semibold py-3 px-2 rounded-xl transition flex items-center justify-center gap-2 text-sm sm:text-base leading-tight text-center"
               >
                 {correctLabel}
               </button>
               <button
                 onClick={() => vote(-1)}
-                disabled={voting || (dimension === 'transcription' && !activeText.trim()) || (dimension === 'gender' && !genderResolved.value)}
+                disabled={voting || (dimension === 'transcription' && !originalText.trim()) || (dimension === 'gender' && !genderResolved.value)}
                 className="flex-1 bg-red-500 hover:bg-red-600 disabled:opacity-40 text-white font-semibold py-3 px-2 rounded-xl transition flex items-center justify-center gap-2 text-sm sm:text-base leading-tight text-center"
               >
                 {incorrectLabel}

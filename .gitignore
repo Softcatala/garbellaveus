@@ -9,6 +9,7 @@ apps/frontend/dist/
 
 # Private deployment/infra notes — not for the public repo
 /DEPLOYMENT_NOTES.md
+/HANDOVER.md
 
 # Python virtualenv / bytecode cache
 venv/

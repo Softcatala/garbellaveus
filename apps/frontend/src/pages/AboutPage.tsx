@@ -21,12 +21,50 @@ export function AboutPage() {
         <section>
           <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">{t('about.datasetTitle')}</h2>
           <p>{t('about.datasetText')}</p>
-          <p className="mt-3">{t('about.licenseText')}</p>
+          <p className="mt-3">
+            {t('about.licensePre')}
+            <a
+              href="https://creativecommons.org/licenses/by/3.0/deed.ca"
+              target="_blank"
+              rel="noreferrer"
+              className="text-brand-600 hover:underline"
+            >
+              {t('about.licenseCCBYLink')}
+            </a>
+            {t('about.licenseMid')}
+            <a
+              href="https://opensource.org/license/mit"
+              target="_blank"
+              rel="noreferrer"
+              className="text-brand-600 hover:underline"
+            >
+              {t('about.licenseMITLink')}
+            </a>
+            {t('about.licensePost')}
+          </p>
         </section>
 
         <section>
           <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">{t('about.whyTitle')}</h2>
           <p>{t('about.whyText')}</p>
+        </section>
+
+        <section>
+          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">{t('about.limitsTitle')}</h2>
+          <p>{t('about.limitsText')}</p>
+          <p className="mt-3">
+            <strong>{t('about.limitsCallLead')}</strong>
+            {t('about.limitsCallText')}
+            <a
+              href="https://www.softcatala.org/contacte/"
+              target="_blank"
+              rel="noreferrer"
+              className="text-brand-600 hover:underline"
+            >
+              {t('about.limitsCallLink')}
+            </a>
+            {t('about.limitsCallEnd')}
+          </p>
         </section>
 
         <section>
@@ -55,26 +93,6 @@ export function AboutPage() {
                 className="text-brand-600 hover:underline"
               >
                 {t('about.linkBSC')}
-              </a>
-            </li>
-            <li>
-              <a
-                href="https://creativecommons.org/licenses/by/3.0/deed.ca"
-                target="_blank"
-                rel="noreferrer"
-                className="text-brand-600 hover:underline"
-              >
-                {t('about.linkCCBY')}
-              </a>
-            </li>
-            <li>
-              <a
-                href="https://opensource.org/license/mit"
-                target="_blank"
-                rel="noreferrer"
-                className="text-brand-600 hover:underline"
-              >
-                {t('about.linkMIT')}
               </a>
             </li>
             <li>

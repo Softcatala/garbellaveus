@@ -74,6 +74,48 @@ describe('ClipService', () => {
     });
   });
 
+  describe('nextForEvaluation relevance flags', () => {
+    const indexed = { tarFile: 1, tarOffset: 0, tarSize: 100 };
+
+    it.each(['transcription', 'gender', 'dialect'])(
+      'never returns a clip the user flagged irrelevant, in the %s dimension',
+      async (dimension) => {
+        await clips.save(clips.create({ clipId: 'flagged', ...indexed }));
+        await clips.save(clips.create({ clipId: 'other', ...indexed }));
+        await service.flagIrrelevant('flagged', 'alice', 'not_catalan');
+
+        for (let i = 0; i < 10; i++) {
+          const picked = await service.nextForEvaluation('alice', dimension, []);
+          expect(picked?.clipId).toBe('other');
+        }
+      },
+    );
+
+    it('returns null rather than the flagged clip when it is the only one left', async () => {
+      await clips.save(clips.create({ clipId: 'flagged', ...indexed }));
+      await service.flagIrrelevant('flagged', 'alice', 'no_speech');
+
+      expect(await service.nextForEvaluation('alice', 'transcription', [])).toBeNull();
+    });
+
+    it('does not cycle back to a flagged clip once every other clip is excluded', async () => {
+      await clips.save(clips.create({ clipId: 'flagged', ...indexed }));
+      await clips.save(clips.create({ clipId: 'skipped', ...indexed }));
+      await service.flagIrrelevant('flagged', 'alice', 'no_speech');
+
+      const picked = await service.nextForEvaluation('alice', 'transcription', ['skipped']);
+      expect(picked?.clipId).toBe('skipped');
+    });
+
+    it('still offers the clip to a different reviewer for a second opinion', async () => {
+      await clips.save(clips.create({ clipId: 'flagged', ...indexed }));
+      await service.flagIrrelevant('flagged', 'alice', 'not_catalan');
+
+      const picked = await service.nextForEvaluation('bob', 'transcription', []);
+      expect(picked?.clipId).toBe('flagged');
+    });
+  });
+
   describe('nextForEvaluation audio-indexed requirement', () => {
     it('never returns a transcription-dimension clip without indexed audio', async () => {
       await clips.save(clips.create({ clipId: 'not-indexed' }));

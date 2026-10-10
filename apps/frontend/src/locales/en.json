@@ -67,6 +67,7 @@
     "allDone": "All done!",
     "allDoneDescription": "You've evaluated all clips for this dimension. Come back later for more.",
     "startOver": "Start over",
+    "backAction": "← Back",
     "evaluateOtherDimension": "Evaluate another dimension",
     "backToList": "Back to list",
     "chooseDimensionTitle": "What do you want to evaluate?",

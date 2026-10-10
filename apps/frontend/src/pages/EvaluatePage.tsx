@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api';
 import { AudioPlayer } from '../components/AudioPlayer';
@@ -42,6 +42,11 @@ export function EvaluatePage({ username }: Props) {
   // Dimension is sourced from the URL, not its own state — that's what makes the
   // in-progress flow shareable/bookmarkable/back-button-safe. Its absence also
   // doubles as the signal to show the dimension picker screen below.
+  const navigate = useNavigate();
+  // History position of the first clip shown in this flow; "Back" is only
+  // offered once the evaluator has moved past it.
+  const flowStartIdxRef = useRef<number | null>(null);
+  const historyIdx: number = window.history.state?.idx ?? 0;
   const dimensionParam = searchParams.get('dimension');
   const dimension: Dimension = isDimension(dimensionParam) ? dimensionParam : 'transcription';
 
@@ -115,14 +120,16 @@ export function EvaluatePage({ username }: Props) {
       } else {
         applyData(data);
         selfNavRef.current = true;
-        setSearchParams({ clipId: data.clip.clipId, dimension });
+        // The very first clip replaces the dimension-only URL: going "back" to it
+        // would just load a different random clip.
+        setSearchParams({ clipId: data.clip.clipId, dimension }, { replace: !currentClipId });
       }
     } catch (e) {
       setError(String(e));
     } finally {
       setLoading(false);
     }
-  }, [username, dimension, setSearchParams]);
+  }, [username, dimension, currentClipId, setSearchParams]);
 
   const loadClip = useCallback(async (clipId: string) => {
     setLoading(true);
@@ -159,6 +166,7 @@ export function EvaluatePage({ username }: Props) {
   // dimension on the same clip", which isn't what voting does. `replace: true`
   // because this is the same logical step as landing on /evaluate, not a new one.
   const chooseDimension = (d: Dimension) => {
+    flowStartIdxRef.current = null;
     setSearchParams({ dimension: d }, { replace: true });
   };
 
@@ -166,11 +174,18 @@ export function EvaluatePage({ username }: Props) {
   // evaluating is unmistakably "start a new evaluation flow", not "stay on this
   // clip but change what the buttons mean".
   const backToDimensionPicker = () => {
+    flowStartIdxRef.current = null;
     resetUi();
     setState(null);
     setDone(false);
     setSearchParams({}, { replace: true });
   };
+
+  useEffect(() => {
+    if (state && flowStartIdxRef.current === null) flowStartIdxRef.current = window.history.state?.idx ?? 0;
+  }, [state]);
+
+  const canGoBack = flowStartIdxRef.current !== null && historyIdx > flowStartIdxRef.current;
 
   const skip = () => {
     if (state) {
@@ -489,8 +504,16 @@ export function EvaluatePage({ username }: Props) {
   return (
     <div className="max-w-2xl mx-auto px-4 py-6">
       {/* Header */}
-      <div className="flex items-center justify-end gap-2 mb-6 text-xs">
-        <span className="px-2.5 py-1 rounded-full bg-gray-100 text-gray-600 font-medium">
+      <div className="flex items-center gap-2 mb-6 text-xs">
+        {canGoBack && (
+          <button
+            onClick={() => navigate(-1)}
+            className="text-gray-400 hover:text-brand-600 hover:underline"
+          >
+            {t('evaluate.backAction')}
+          </button>
+        )}
+        <span className="ml-auto px-2.5 py-1 rounded-full bg-gray-100 text-gray-600 font-medium">
           {t(`dimension.${dimension}`)}
         </span>
         <button

@@ -67,6 +67,7 @@
     "allDone": "Tot fet!",
     "allDoneDescription": "Heu avaluat tots els clips per a aquesta dimensió. Torneu més endavant per veure'n més.",
     "startOver": "Tornar a començar",
+    "backAction": "← Enrere",
     "evaluateOtherDimension": "Avalua una altra dimensió",
     "backToList": "Tornar a la llista",
     "chooseDimensionTitle": "Què vols avaluar?",

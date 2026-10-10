@@ -92,6 +92,13 @@ export class ClipController {
     return { ok: true };
   }
 
+  @Delete(':id/flag-irrelevant')
+  async unflagIrrelevant(@Param('id') id: string, @Query('username') username: string) {
+    if (!username) throw new BadRequestException('username required');
+    await this.clipService.unflagIrrelevant(id, username);
+    return { ok: true };
+  }
+
   @UseGuards(ApiKeyGuard)
   @Delete(':id')
   async remove(@Param('id') id: string) {

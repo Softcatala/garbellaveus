@@ -168,6 +168,7 @@ that pattern if you add other cascading deletes).
 | `POST` | `/clips` 🔑 | Upsert (by `clipId`) |
 | `POST` | `/clips/:id/tar-index` 🔑 | Set audio location (`tarFile`/`tarOffset`/`tarSize`) |
 | `POST` | `/clips/:id/flag-irrelevant` | Records a relevance-flag vote |
+| `DELETE` | `/clips/:id/flag-irrelevant?username=` | Retracts that user's flag; restores the clip if it drops back under 2 flags |
 | `DELETE` | `/clips/:id` 🔑 | Cascades to the clip's transcriptions + votes |
 | `POST` | `/transcriptions` | Create (idempotent by `clipId`+`origin`+`text`) |
 | `DELETE` | `/transcriptions/:id` 🔑 | |

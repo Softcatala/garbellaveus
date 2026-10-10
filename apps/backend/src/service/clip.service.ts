@@ -202,6 +202,20 @@ export class ClipService {
     }
   }
 
+  // Retracts this user's irrelevance flag. If their flag is what pushed the
+  // clip over the 2-flag threshold, the clip becomes eligible again; a clip
+  // marked irrelevant by other means (e.g. the language-ID pipeline) is left
+  // as is, since its flag count never reached the threshold.
+  async unflagIrrelevant(clipId: string, username: string): Promise<void> {
+    const existing = await this.votes.findOne({ where: { clipId, dimension: 'relevance', username } });
+    if (!existing) return;
+    const flagsBefore = await this.votes.count({ where: { clipId, dimension: 'relevance', value: -1 } });
+    await this.votes.delete(existing.id);
+    if (existing.value === -1 && flagsBefore >= 2 && flagsBefore - 1 < 2) {
+      await this.clips.update({ clipId }, { isRelevant: null });
+    }
+  }
+
   private async enrichClip(clip: Clip): Promise<ClipWithBest> {
     const allTranscriptions = await this.transcriptions.find({
       where: { clipId: clip.clipId },

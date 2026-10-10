@@ -89,6 +89,12 @@ export const api = {
       { method: 'POST' },
     ),
 
+  unflagIrrelevant: (clipId: string, username: string) =>
+    request<{ ok: boolean }>(
+      `/clips/${clipId}/flag-irrelevant?username=${encodeURIComponent(username)}`,
+      { method: 'DELETE' },
+    ),
+
   reportIssue: (data: {
     clipId: string;
     dimension: string;

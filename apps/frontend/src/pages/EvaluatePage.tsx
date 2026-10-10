@@ -179,12 +179,36 @@ export function EvaluatePage({ username }: Props) {
     }
   };
 
+  // Re-reads the current clip so the flag state/badge reflect the server
+  // without resetting the audio player or the rest of the evaluation UI.
+  const refreshFlagState = async (clipId: string) => {
+    const data = await api.evaluateClip(clipId, username);
+    setState((s) => (s ? { ...s, clip: data.clip, votes: data.votes, userVotes: data.userVotes } : s));
+    setIrrelevantPicker(false);
+    setVoting(false);
+  };
+
   const confirmFlagIrrelevant = async () => {
     if (!state || voting) return;
     setVoting(true);
     try {
       await api.flagIrrelevant(state.clip.clipId, username, irrelevantReason);
-      loadNext();
+      // Changing the reason of an existing flag keeps the evaluator on the clip;
+      // a first-time flag moves on to the next one.
+      if (userRelevanceVote) await refreshFlagState(state.clip.clipId);
+      else loadNext();
+    } catch (e) {
+      setError(String(e));
+      setVoting(false);
+    }
+  };
+
+  const removeIrrelevantFlag = async () => {
+    if (!state || voting) return;
+    setVoting(true);
+    try {
+      await api.unflagIrrelevant(state.clip.clipId, username);
+      await refreshFlagState(state.clip.clipId);
     } catch (e) {
       setError(String(e));
       setVoting(false);
@@ -234,13 +258,23 @@ export function EvaluatePage({ username }: Props) {
       return;
     }
 
-    // Transcription: "incorrect" opens the correction step below instead of
-    // voting immediately — saveCorrection/declineCorrection handle the actual
-    // votes once the evaluator picks Save or Never ask there.
+    // Transcription: "incorrect" records the downvote on the original row right
+    // away, then opens the correction step. Save adds the corrected text as a new
+    // row with its own upvote; Skip there just moves on, leaving the downvote.
     if (dimension === 'transcription' && value === -1 && !transcriptionCorrecting) {
-      const best = state.uniqueTranscriptions[0];
-      setEditText(best?.text ?? state.clip.candidate1 ?? state.clip.candidate2 ?? '');
-      setTranscriptionCorrecting(true);
+      setVoting(true);
+      try {
+        const originalId = await resolveOriginalTranscriptionId();
+        if (originalId) {
+          await api.castVote({ clipId: state.clip.clipId, dimension: 'transcription', targetId: originalId, username, value: -1 });
+        }
+        const best = state.uniqueTranscriptions[0];
+        setEditText(best?.text ?? state.clip.candidate1 ?? state.clip.candidate2 ?? '');
+        setTranscriptionCorrecting(true);
+      } catch (e) {
+        setError(String(e));
+      }
+      setVoting(false);
       return;
     }
 
@@ -290,8 +324,7 @@ export function EvaluatePage({ username }: Props) {
     }
   };
 
-  // Shared by saveCorrection/declineCorrection: the transcription row to cast
-  // the "incorrect" downvote against, creating one from the raw dataset
+  // The transcription row to cast the "incorrect" downvote against, creating one from the raw dataset
   // candidate first if this clip has never had a Transcription row voted on.
   const resolveOriginalTranscriptionId = async (): Promise<string | undefined> => {
     if (!state) return undefined;
@@ -310,30 +343,8 @@ export function EvaluatePage({ username }: Props) {
     if (!corrected) return;
     setVoting(true);
     try {
-      const originalId = await resolveOriginalTranscriptionId();
-      if (originalId) {
-        await api.castVote({ clipId: state.clip.clipId, dimension: 'transcription', targetId: originalId, username, value: -1 });
-      }
       const newT = await api.createTranscription({ clipId: state.clip.clipId, origin: 'human', text: corrected });
       await api.castVote({ clipId: state.clip.clipId, dimension: 'transcription', targetId: String(newT.id), username, value: 1 });
-      loadNext();
-    } catch (e) {
-      setError(String(e));
-      setVoting(false);
-    }
-  };
-
-  // "Never ask [me to correct this] again": register that the current text is
-  // wrong without requiring a fix, then move on — unlike Skip, this still casts
-  // the incorrect vote so other evaluators see it needs work.
-  const declineCorrection = async () => {
-    if (!state || voting) return;
-    setVoting(true);
-    try {
-      const originalId = await resolveOriginalTranscriptionId();
-      if (originalId) {
-        await api.castVote({ clipId: state.clip.clipId, dimension: 'transcription', targetId: originalId, username, value: -1 });
-      }
       loadNext();
     } catch (e) {
       setError(String(e));
@@ -355,6 +366,16 @@ export function EvaluatePage({ username }: Props) {
       setError(String(e));
       setVoting(false);
     }
+  };
+
+  const userRelevanceVote = state?.userVotes.find((v) => v.dimension === 'relevance' && v.value === -1);
+  const userRelevanceReason = (IRRELEVANT_REASONS as readonly string[]).includes(userRelevanceVote?.targetId ?? '')
+    ? (userRelevanceVote!.targetId as IrrelevantReason)
+    : undefined;
+
+  const openIrrelevantPicker = () => {
+    if (userRelevanceReason) setIrrelevantReason(userRelevanceReason);
+    setIrrelevantPicker(true);
   };
 
   const userVotesForDimension = state?.userVotes.filter((v) => v.dimension === dimension) ?? [];
@@ -570,7 +591,7 @@ export function EvaluatePage({ username }: Props) {
                     className="w-full border border-brand-300 rounded-lg px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-300 resize-none overflow-hidden"
                     autoFocus
                   />
-                  <div className="grid grid-cols-3 gap-3 mt-3">
+                  <div className="grid grid-cols-2 gap-3 mt-3">
                     <button
                       onClick={saveCorrection}
                       disabled={voting || !trimmedEdit || trimmedEdit === originalText}
@@ -588,13 +609,6 @@ export function EvaluatePage({ username }: Props) {
                       className="px-2 bg-gray-100 hover:bg-gray-200 disabled:opacity-40 text-gray-600 font-medium py-2.5 rounded-lg transition text-sm sm:text-base"
                     >
                       {t('evaluate.skip')}
-                    </button>
-                    <button
-                      onClick={declineCorrection}
-                      disabled={voting}
-                      className="px-2 bg-gray-100 hover:bg-gray-200 disabled:opacity-40 text-gray-600 font-medium py-2.5 rounded-lg transition text-sm sm:text-base leading-tight"
-                    >
-                      {t('evaluate.neverAskCorrection')}
                     </button>
                   </div>
                   <div className="mt-4 pt-4 border-t border-gray-100">
@@ -790,14 +804,16 @@ export function EvaluatePage({ username }: Props) {
 
           {/* Not relevant flag + report an issue */}
           <div className="flex justify-center items-center gap-4">
-            <button
-              onClick={() => setIrrelevantPicker((o) => !o)}
-              disabled={voting}
-              className="text-xs text-orange-500 hover:text-orange-700 hover:underline disabled:opacity-40"
-              title={t('evaluate.notRelevantTitle')}
-            >
-              {t('evaluate.notRelevant')}
-            </button>
+            {!userRelevanceVote && (
+              <button
+                onClick={() => (irrelevantPicker ? setIrrelevantPicker(false) : openIrrelevantPicker())}
+                disabled={voting}
+                className="text-xs text-orange-500 hover:text-orange-700 hover:underline disabled:opacity-40"
+                title={t('evaluate.notRelevantTitle')}
+              >
+                {t('evaluate.notRelevant')}
+              </button>
+            )}
             <button
               onClick={() => setReportOpen((o) => !o)}
               className="text-xs text-gray-400 hover:text-gray-600 hover:underline"
@@ -806,6 +822,32 @@ export function EvaluatePage({ username }: Props) {
               {t('evaluate.reportIssue')}
             </button>
           </div>
+
+          {userRelevanceVote && (
+            <div className="bg-orange-50 border border-orange-200 rounded-2xl p-4 text-center">
+              <p className="text-sm text-orange-800">
+                {userRelevanceReason
+                  ? t('evaluate.youFlaggedIrrelevantReason', { reason: translateValue(t, 'irrelevantReason', userRelevanceReason) })
+                  : t('evaluate.youFlaggedIrrelevant')}
+              </p>
+              <div className="flex justify-center gap-4 mt-2">
+                <button
+                  onClick={() => (irrelevantPicker ? setIrrelevantPicker(false) : openIrrelevantPicker())}
+                  disabled={voting}
+                  className="text-xs text-orange-600 hover:text-orange-800 hover:underline disabled:opacity-40"
+                >
+                  {t('evaluate.changeFlagReason')}
+                </button>
+                <button
+                  onClick={removeIrrelevantFlag}
+                  disabled={voting}
+                  className="text-xs text-orange-600 hover:text-orange-800 hover:underline disabled:opacity-40"
+                >
+                  {t('evaluate.removeIrrelevantFlag')}
+                </button>
+              </div>
+            </div>
+          )}
 
           {irrelevantPicker && (
             <div className="bg-white rounded-2xl border border-gray-200 p-4">
@@ -831,7 +873,7 @@ export function EvaluatePage({ username }: Props) {
                   {t('evaluate.flagIrrelevantConfirm')}
                 </button>
                 <button
-                  onClick={() => { setIrrelevantPicker(false); setIrrelevantReason('not_catalan'); }}
+                  onClick={() => { setIrrelevantPicker(false); setIrrelevantReason(userRelevanceReason ?? 'not_catalan'); }}
                   className="px-4 bg-gray-100 hover:bg-gray-200 text-gray-600 font-medium py-2 rounded-lg transition"
                 >
                   {t('evaluate.cancel')}

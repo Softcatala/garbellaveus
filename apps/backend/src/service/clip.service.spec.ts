@@ -74,6 +74,60 @@ describe('ClipService', () => {
     });
   });
 
+  describe('unflagIrrelevant', () => {
+    const indexed = { tarFile: 1, tarOffset: 0, tarSize: 100 };
+
+    it('removes the user\'s flag and makes the clip eligible for them again', async () => {
+      await clips.save(clips.create({ clipId: 'clip-1', ...indexed }));
+      await service.flagIrrelevant('clip-1', 'alice', 'not_catalan');
+
+      await service.unflagIrrelevant('clip-1', 'alice');
+
+      expect(await votes.count({ where: { clipId: 'clip-1', dimension: 'relevance' } })).toBe(0);
+      const picked = await service.nextForEvaluation('alice', 'transcription', []);
+      expect(picked?.clipId).toBe('clip-1');
+    });
+
+    it('restores a clip that this retraction takes back under the 2-flag threshold', async () => {
+      await clips.save(clips.create({ clipId: 'clip-1', ...indexed }));
+      await service.flagIrrelevant('clip-1', 'alice', 'not_catalan');
+      await service.flagIrrelevant('clip-1', 'bob', 'no_speech');
+      expect((await clips.findOneOrFail({ where: { clipId: 'clip-1' } })).isRelevant).toBe(0);
+
+      await service.unflagIrrelevant('clip-1', 'alice');
+
+      expect((await clips.findOneOrFail({ where: { clipId: 'clip-1' } })).isRelevant).toBeNull();
+      expect(await votes.count({ where: { clipId: 'clip-1', dimension: 'relevance', username: 'bob' } })).toBe(1);
+    });
+
+    it('keeps the clip irrelevant when two other flags remain', async () => {
+      await clips.save(clips.create({ clipId: 'clip-1', ...indexed }));
+      for (const u of ['alice', 'bob', 'carol']) await service.flagIrrelevant('clip-1', u, 'not_catalan');
+
+      await service.unflagIrrelevant('clip-1', 'alice');
+
+      expect((await clips.findOneOrFail({ where: { clipId: 'clip-1' } })).isRelevant).toBe(0);
+    });
+
+    it('does not un-hide a clip marked irrelevant by the language pipeline when a lone flag is retracted', async () => {
+      await clips.save(clips.create({ clipId: 'clip-1', ...indexed, isRelevant: false }));
+      await service.flagIrrelevant('clip-1', 'alice', 'not_catalan');
+
+      await service.unflagIrrelevant('clip-1', 'alice');
+
+      expect((await clips.findOneOrFail({ where: { clipId: 'clip-1' } })).isRelevant).toBe(0);
+    });
+
+    it('is a no-op when the user never flagged the clip', async () => {
+      await clips.save(clips.create({ clipId: 'clip-1', ...indexed }));
+      await service.flagIrrelevant('clip-1', 'bob', 'not_catalan');
+
+      await service.unflagIrrelevant('clip-1', 'alice');
+
+      expect(await votes.count({ where: { clipId: 'clip-1', dimension: 'relevance' } })).toBe(1);
+    });
+  });
+
   describe('nextForEvaluation relevance flags', () => {
     const indexed = { tarFile: 1, tarOffset: 0, tarSize: 100 };
 

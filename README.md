@@ -81,4 +81,4 @@ Per clip, the script fetches the audio via range request, runs `gemini --yolo` o
 - One vote per user per clip per dimension (upserted on re-vote)
 - Net votes ≥ 2 → "golden" / trusted
 - Skips are tracked client-side (localStorage), not persisted
-- Username is set in localStorage on first visit — no auth
+- An anonymous UUID is generated on first visit and stored in localStorage (sent as `username` on votes) — no auth, no user-chosen name

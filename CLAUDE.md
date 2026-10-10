@@ -132,12 +132,18 @@ From HuggingFace (via Parquet/API):
 
 ## Voting System
 
-- Dimensions: `transcription`, `gender` (extendable)
+- Dimensions: `transcription`, `dialect`, `gender` (extendable)
+- **Gender is hidden in the UI** (commit `199b244`, "pending internal discussion"):
+  it's not offered in the evaluate page's dimension picker, the home page stats
+  grid, or the home/about copy. It is *not* removed — the backend, voting, stats
+  and `?dimension=gender` deep links still work, and the `gender` column stays
+  in the data. Don't describe gender as a feature of the project in user-facing
+  text, and don't re-expose it without checking with the maintainers.
 - One vote per user per clip per dimension (upserted on re-vote)
 - Net votes ≥ 2 → "golden" / trusted
 - Downvote (−1) reduces net votes
 - Skip: tracked in browser localStorage, not persisted
-- User identity: username set in localStorage on first visit
+- User identity: an anonymous UUID is generated on first visit and stored in localStorage (no auth, no user-chosen name). It is sent as the `username` field of votes.
 
 ## Backend Data Model
 

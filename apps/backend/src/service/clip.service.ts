@@ -99,9 +99,21 @@ export class ClipService {
     const SAMPLE_SIZE = 200;
 
     const excludedIds = new Set<string>(skipIds);
+    // Clips this user flagged irrelevant are off-limits in every dimension and
+    // even when the queue is exhausted: a single flag doesn't make the clip
+    // globally irrelevant (that takes a second reviewer), so without this it
+    // would keep coming back to the person who already rejected it.
+    const flaggedByUser = new Set<string>();
     if (username) {
       const voted = await this.votes.find({ where: { username, dimension }, select: ['clipId'] });
       for (const v of voted) excludedIds.add(v.clipId);
+      if (dimension !== 'relevance') {
+        const flagged = await this.votes.find({ where: { username, dimension: 'relevance' }, select: ['clipId'] });
+        for (const v of flagged) {
+          flaggedByUser.add(v.clipId);
+          excludedIds.add(v.clipId);
+        }
+      }
     }
 
     const sample = await baseQb().orderBy('RANDOM()').limit(SAMPLE_SIZE).getMany();
@@ -150,9 +162,14 @@ export class ClipService {
     const fallback = await fallbackQb.orderBy('RANDOM()').limit(1).getOne();
     if (fallback) return fallback;
 
-    // If user has evaluated all clips, cycle back (but still exclude irrelevant)
+    // If user has evaluated all clips, cycle back (but still exclude irrelevant,
+    // including clips this user flagged themselves)
     if (excludedList.length > 0) {
-      return baseQb().orderBy('RANDOM()').limit(1).getOne();
+      const cycleQb = baseQb();
+      if (flaggedByUser.size > 0) {
+        cycleQb.andWhere('clip.clip_id NOT IN (:...flagged)', { flagged: [...flaggedByUser] });
+      }
+      return cycleQb.orderBy('RANDOM()').limit(1).getOne();
     }
 
     return null;

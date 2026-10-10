@@ -1,8 +1,9 @@
 import { Injectable, ConflictException, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { IsNull, Repository } from 'typeorm';
+import { In, IsNull, Repository } from 'typeorm';
 import { Vote } from '../domain/vote.entity';
 import { Clip } from '../domain/clip.entity';
+import { Transcription } from '../domain/transcription.entity';
 import { MetricsService } from '../observability/metrics.service';
 
 export interface VoteSummary {
@@ -28,6 +29,7 @@ export class VoteService implements OnModuleInit {
   constructor(
     @InjectRepository(Vote) private readonly repo: Repository<Vote>,
     @InjectRepository(Clip) private readonly clips: Repository<Clip>,
+    @InjectRepository(Transcription) private readonly transcriptions: Repository<Transcription>,
     private readonly metrics: MetricsService,
   ) {}
 
@@ -35,6 +37,8 @@ export class VoteService implements OnModuleInit {
   // otherwise it reads 0 after every restart until enough new votes are cast
   // to cross the threshold again.
   async onModuleInit(): Promise<void> {
+    await this.reconcileDuplicateTranscriptionVotes();
+
     const rows = await this.repo
       .createQueryBuilder('v')
       .select('v.dimension', 'dimension')
@@ -55,6 +59,61 @@ export class VoteService implements OnModuleInit {
     }
   }
 
+  // Transcription rows are deduplicated by (clipId, origin, text) on create but
+  // by text alone when shown to evaluators (evaluate.controller), which uses the
+  // lowest id as the candidate's representativeId. Votes must target that same
+  // id, otherwise support for identical text is split across rows.
+  private async canonicalTranscriptionTarget(clipId: string, targetId: string | undefined): Promise<string | undefined> {
+    if (!targetId || !/^\d+$/.test(targetId)) return targetId;
+    const voted = await this.transcriptions.findOne({ where: { id: Number(targetId), clipId } });
+    if (!voted) return targetId;
+    const first = await this.transcriptions.findOne({
+      where: { clipId, text: voted.text },
+      order: { id: 'ASC' },
+    });
+    return first ? String(first.id) : targetId;
+  }
+
+  // Moves votes cast on non-canonical duplicates onto the canonical id. When one
+  // reviewer voted on several rows with the same text, only their most recent
+  // opinion survives so it is counted once. Idempotent; a no-op once reconciled.
+  async reconcileDuplicateTranscriptionVotes(): Promise<void> {
+    const groups = await this.transcriptions
+      .createQueryBuilder('t')
+      .select('t.clip_id', 'clipId')
+      .addSelect('MIN(t.id)', 'canonicalId')
+      .addSelect('GROUP_CONCAT(t.id)', 'ids')
+      .groupBy('t.clip_id')
+      .addGroupBy('t.text')
+      .having('COUNT(*) > 1')
+      .getRawMany<{ clipId: string; canonicalId: number; ids: string }>();
+
+    await this.repo.manager.transaction(async (em) => {
+      const votes = em.getRepository(Vote);
+      for (const group of groups) {
+        const canonical = String(group.canonicalId);
+        const duplicates = group.ids.split(',').filter((id) => id !== canonical);
+        const stray = await votes.find({
+          where: { clipId: group.clipId, dimension: 'transcription', targetId: In(duplicates) },
+          order: { id: 'ASC' },
+        });
+        for (const vote of stray) {
+          const kept = await votes.findOne({
+            where: { clipId: group.clipId, dimension: 'transcription', targetId: canonical, username: vote.username },
+          });
+          if (!kept) {
+            await votes.update(vote.id, { targetId: canonical });
+            continue;
+          }
+          if ((vote.createdAt ?? '') > (kept.createdAt ?? '')) {
+            await votes.update(kept.id, { value: vote.value, createdAt: vote.createdAt });
+          }
+          await votes.delete(vote.id);
+        }
+      }
+    });
+  }
+
   async cast(data: {
     clipId: string;
     dimension: string;
@@ -62,6 +121,9 @@ export class VoteService implements OnModuleInit {
     username: string;
     value: number; // +1 or -1
   }): Promise<Vote> {
+    if (data.dimension === 'transcription') {
+      data = { ...data, targetId: await this.canonicalTranscriptionTarget(data.clipId, data.targetId) };
+    }
     // Upsert: one vote per user per clip per dimension per target — this lets a
     // user hold independent votes on competing candidates within the same dimension
     // (e.g. downvoting the current gender while upvoting the proposed alternative).

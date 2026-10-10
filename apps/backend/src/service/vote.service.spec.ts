@@ -10,6 +10,7 @@ import { MetricsService } from '../observability/metrics.service';
 describe('VoteService', () => {
   let service: VoteService;
   let repo: Repository<Vote>;
+  let transcriptions: Repository<Transcription>;
 
   beforeEach(async () => {
     const module = await Test.createTestingModule({
@@ -24,13 +25,14 @@ describe('VoteService', () => {
           entities: [Vote, Clip, Transcription],
           synchronize: true,
         }),
-        TypeOrmModule.forFeature([Vote, Clip]),
+        TypeOrmModule.forFeature([Vote, Clip, Transcription]),
       ],
       providers: [VoteService, MetricsService],
     }).compile();
 
     service = module.get(VoteService);
     repo = module.get(getRepositoryToken(Vote));
+    transcriptions = module.get(getRepositoryToken(Transcription));
 
     // Vote.clipId is a real FK against clips, so seed the clips these tests vote on.
     const clips: Repository<Clip> = module.get(getRepositoryToken(Clip));
@@ -120,5 +122,103 @@ describe('VoteService', () => {
     expect(gender).toMatchObject({ evaluated: 2, golden: 1, evaluatedHours: 1.5, goldenHours: 1 });
     // clip-1 + clip-2 + clip-3 = 1 + 0.5 + 1 = 2.5h, including the never-voted-on clip.
     expect(stats.totalHours).toBe(2.5);
+  });
+  describe('identical transcription texts share one voting target', () => {
+    const seed = async () => {
+      const gemini = await transcriptions.save(transcriptions.create({ clipId: 'clip-1', origin: 'gemini', text: 'Same corrected text' }));
+      const other = await transcriptions.save(transcriptions.create({ clipId: 'clip-1', origin: 'claude', text: 'Something else' }));
+      const human = await transcriptions.save(transcriptions.create({ clipId: 'clip-1', origin: 'human', text: 'Same corrected text' }));
+      return { gemini, other, human };
+    };
+
+    it('redirects a vote on a later duplicate to the oldest row with the same text', async () => {
+      const { gemini, human } = await seed();
+
+      const saved = await service.cast({ clipId: 'clip-1', dimension: 'transcription', targetId: String(human.id), username: 'alice', value: 1 });
+
+      expect(saved.targetId).toBe(String(gemini.id));
+      const summary = await service.summaryForClip('clip-1');
+      expect(summary).toEqual([expect.objectContaining({ targetId: String(gemini.id), netVotes: 1 })]);
+    });
+
+    it('accumulates a correction vote and later confirmations on the same target', async () => {
+      const { gemini, human } = await seed();
+
+      await service.cast({ clipId: 'clip-1', dimension: 'transcription', targetId: String(human.id), username: 'alice', value: 1 });
+      await service.cast({ clipId: 'clip-1', dimension: 'transcription', targetId: String(gemini.id), username: 'bob', value: 1 });
+
+      const summary = await service.summaryForClip('clip-1');
+      expect(summary).toEqual([expect.objectContaining({ targetId: String(gemini.id), netVotes: 2, isGolden: true })]);
+    });
+
+    it('does not count the same reviewer twice when they vote via different duplicate ids', async () => {
+      const { gemini, human } = await seed();
+
+      await service.cast({ clipId: 'clip-1', dimension: 'transcription', targetId: String(gemini.id), username: 'alice', value: 1 });
+      await service.cast({ clipId: 'clip-1', dimension: 'transcription', targetId: String(human.id), username: 'alice', value: 1 });
+
+      const rows = await repo.find({ where: { clipId: 'clip-1', dimension: 'transcription' } });
+      expect(rows).toHaveLength(1);
+      expect(rows[0].value).toBe(1);
+    });
+
+    it('leaves votes on distinct texts on their own ids', async () => {
+      const { other } = await seed();
+
+      const saved = await service.cast({ clipId: 'clip-1', dimension: 'transcription', targetId: String(other.id), username: 'alice', value: -1 });
+
+      expect(saved.targetId).toBe(String(other.id));
+    });
+
+    it('does not rewrite non-transcription targets that happen to look numeric', async () => {
+      await seed();
+
+      const saved = await service.cast({ clipId: 'clip-1', dimension: 'gender', targetId: '3', username: 'alice', value: 1 });
+
+      expect(saved.targetId).toBe('3');
+    });
+
+    describe('reconcileDuplicateTranscriptionVotes', () => {
+      const vote = (targetId: string, username: string, value: number, createdAt: string) =>
+        repo.save(repo.create({ clipId: 'clip-1', dimension: 'transcription', targetId, username, value, createdAt }));
+
+      it('moves votes from duplicate rows onto the canonical id', async () => {
+        const { gemini, human } = await seed();
+        await vote(String(gemini.id), 'bob', 1, '2026-01-01');
+        await vote(String(human.id), 'alice', 1, '2026-01-02');
+
+        await service.reconcileDuplicateTranscriptionVotes();
+
+        const summary = await service.summaryForClip('clip-1');
+        expect(summary).toEqual([expect.objectContaining({ targetId: String(gemini.id), netVotes: 2, isGolden: true })]);
+      });
+
+      it('keeps only a reviewer\'s most recent opinion when they voted on both ids', async () => {
+        const { gemini, human } = await seed();
+        await vote(String(gemini.id), 'alice', -1, '2026-01-01');
+        await vote(String(human.id), 'alice', 1, '2026-01-02');
+
+        await service.reconcileDuplicateTranscriptionVotes();
+
+        const rows = await repo.find({ where: { clipId: 'clip-1', dimension: 'transcription' } });
+        expect(rows).toHaveLength(1);
+        expect(rows[0]).toMatchObject({ targetId: String(gemini.id), username: 'alice', value: 1 });
+      });
+
+      it('is idempotent and leaves unrelated votes alone', async () => {
+        const { gemini, other, human } = await seed();
+        await vote(String(human.id), 'alice', 1, '2026-01-02');
+        await vote(String(other.id), 'bob', -1, '2026-01-03');
+
+        await service.reconcileDuplicateTranscriptionVotes();
+        await service.reconcileDuplicateTranscriptionVotes();
+
+        const rows = await repo.find({ where: { clipId: 'clip-1' }, order: { id: 'ASC' } });
+        expect(rows.map((r) => [r.targetId, r.username, r.value])).toEqual([
+          [String(gemini.id), 'alice', 1],
+          [String(other.id), 'bob', -1],
+        ]);
+      });
+    });
   });
 });

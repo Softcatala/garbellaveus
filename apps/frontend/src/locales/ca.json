@@ -99,11 +99,6 @@
     "genderIncorrectFemale": "👎 No, és una dona",
     "correctionPrompt": "T'importaria corregir-la?",
     "saveCorrection": "Desa",
-    "transcriptionGuidelinesTitle": "Com ha de ser una bona transcripció",
-    "transcriptionGuideline1": "Fes servir la puntuació estàndard (comes, punts, interrogants i exclamacions) tal com se sent.",
-    "transcriptionGuideline2": "Posa majúscula a l'inici de cada frase i als noms propis (persones, llocs).",
-    "transcriptionGuideline3": "Escriu els números, les abreviatures i les vacil·lacions tal com es pronuncien realment.",
-    "transcriptionGuideline4": "No afegeixis paraules que no s'hagin dit, ni n'ometis cap que sí que s'hagi dit.",
     "dialectPickerPrompt": "Quin dialecte és realment?",
     "dialectPickerPlaceholder": "Selecciona el dialecte correcte…",
     "recordDialect": "Registra el dialecte",
@@ -131,9 +126,120 @@
     "alreadyVoted": "Ja heu votat {{emoji}} en aquest clip per a {{dimension}}. Votar de nou actualitzarà la vostra elecció.",
     "correctedDimension": "Heu corregit {{dimension}}: ara es mostra {{value}}. Votar de nou actualitzarà la vostra elecció."
   },
+  "guidelines": {
+    "title": "Com ha de ser una bona transcripció",
+    "show": "Mostra",
+    "hide": "Amaga",
+    "short": [
+      "Transcriu literalment el que se sent: amb castellanismes, errades gramaticals i formes dialectals (p. ex. «eixes»).",
+      "Inclou les vacil·lacions i les interjeccions: «eh», «mmm», «a veure»…",
+      "No afegeixis ni ometis paraules, i no «milloris» el que ha dit el parlant.",
+      "Posa puntuació i majúscules (inici de frase, noms propis).",
+      "Els números es poden escriure amb xifres (2015); les abreviatures, tal com es pronuncien."
+    ],
+    "moreLink": "Motius i exemples",
+    "pageTitle": "Guia de transcripció",
+    "pageIntro": "Aquesta guia explica què busquem en una bona transcripció i per què. Escolta bé l'àudio i llegeix el text amb atenció: cada avaluació serveix per entrenar models de reconeixement de la parla en català.",
+    "rulesTitle": "Les pautes, una per una",
+    "whyLabel": "Per què?",
+    "audioLabel": "Àudio",
+    "wrongLabel": "Incorrecte",
+    "rightLabel": "Correcte",
+    "rules": [
+      {
+        "title": "Literalitat: escriu el que se sent, no el que «hauria de dir»",
+        "text": "La transcripció ha de reflectir fidelment la parla, també amb castellanismes («en quant a», «m'agradaria destacar una cosa») i errades gramaticals. No les corregeixis.",
+        "why": "Així conservem tota la informació possible. Si en el futur es vol treure alguna cosa, sempre es pot fer de manera automàtica; però afegir-ho després requeriria que algú tornés a fer la feina que fem ara.",
+        "examples": [
+          {
+            "audio": "en quant a l'aprovació del pressupost, doncs…",
+            "wrong": "Pel que fa a l'aprovació del pressupost, doncs…",
+            "right": "En quant a l'aprovació del pressupost, doncs…"
+          }
+        ]
+      },
+      {
+        "title": "Formes dialectals i lèxic: respecta la varietat del parlant",
+        "text": "Si el text proposat ha «normalitzat» una paraula o una forma gramatical però l'àudio és clarament diferent, cal corregir-lo.",
+        "why": "El conjunt de dades serveix per entrenar models que han d'entendre totes les varietats del català. Si la transcripció uniformitza el dialecte, el model aprèn que la parla de tothom és la mateixa.",
+        "examples": [
+          {
+            "audio": "eixes cases són molt antigues",
+            "wrong": "Aquestes cases són molt antigues",
+            "right": "Eixes cases són molt antigues"
+          }
+        ]
+      },
+      {
+        "title": "Vacil·lacions i interjeccions: inclou-les",
+        "text": "Escriu els «eh», «mmm», «bé», «a veure», les repeticions i els començaments de frase abandonats tal com es pronuncien.",
+        "why": "Són part de la parla real i els models de reconeixement han de saber-les tractar. Treure-les d'un text és trivial; afegir-les a posteriori no.",
+        "examples": [
+          {
+            "audio": "eh… a veure, jo crec que, que sí",
+            "wrong": "Jo crec que sí.",
+            "right": "Eh… a veure, jo crec que, que sí."
+          }
+        ]
+      },
+      {
+        "title": "Ni més ni menys paraules",
+        "text": "No afegeixis paraules que no s'han dit ni en deixis cap de les que sí que s'han dit, encara que la frase quedaria millor o més curta.",
+        "why": "Una transcripció només és útil per entrenar si el text i l'àudio coincideixen. Una paraula de més o de menys introdueix soroll directament a les dades.",
+        "examples": [
+          {
+            "audio": "avui parlarem del pressupost de l'any vinent",
+            "wrong": "Avui parlarem del pressupost.",
+            "right": "Avui parlarem del pressupost de l'any vinent."
+          }
+        ]
+      },
+      {
+        "title": "Puntuació i majúscules: sí, i estàndard",
+        "text": "Fes servir comes, punts, interrogants i exclamacions segons l'entonació i el sentit, i posa majúscula a l'inici de frase i als noms propis.",
+        "why": "No apliquem cap normalització de manera deliberada. Els models actuals, com Whisper, s'entrenen amb puntuació i majúscules; si les mantenim, deixem oberta la porta a decisions futures. Treure-les és fàcil; posar-les, no.",
+        "examples": [
+          {
+            "audio": "bon dia a tothom avui parlarem de l'ajuntament de girona",
+            "wrong": "bon dia a tothom avui parlarem de l'ajuntament de girona",
+            "right": "Bon dia a tothom. Avui parlarem de l'Ajuntament de Girona."
+          }
+        ]
+      },
+      {
+        "title": "Números i abreviatures",
+        "text": "Escriu els números i les dates amb xifres: no cal que escriguis «dos mil quinze» en lloc de «2015». Les abreviatures, en canvi, escriu-les tal com es pronuncien (si es diu «senyor», no posis «Sr.»).",
+        "why": "Convertir xifres en paraules es pot fer de manera programàtica i fiable. Anar en sentit contrari és més difícil, i les xifres són més naturals de llegir i d'escriure.",
+        "examples": [
+          {
+            "audio": "l'any dos mil quinze vam aprovar el pla",
+            "wrong": "",
+            "right": "L'any 2015 vam aprovar el pla."
+          },
+          {
+            "audio": "el senyor alcalde ha dit…",
+            "wrong": "Sr. alcalde ha dit…",
+            "right": "El senyor alcalde ha dit…"
+          }
+        ]
+      }
+    ],
+    "scoringTitle": "Com es validen les transcripcions",
+    "scoring": [
+      "Cada vot «Correcte» suma un punt i cada vot «Incorrecte» en resta un.",
+      "Quan una transcripció arriba a dos punts es considera vàlida.",
+      "Quan algú corregeix una transcripció, la correcció rep un punt, però una altra persona l'ha de donar per correcta perquè es consideri vàlida.",
+      "Si dues persones proposen una correcció amb exactament el mateix text, els punts se sumen i compten com una sola validació.",
+      "No es fa cap normalització del text (puntuació, majúscules, números…) de manera deliberada, per no perdre informació. Sempre es pot normalitzar i agrupar després, si es creu convenient."
+    ],
+    "imperfectTitle": "Si tens dubtes",
+    "imperfectText": "Si hi ha una paraula que no s'entén del tot, fes-ho el millor que puguis; si el clip és impossible d'avaluar, pots ometre'l o informar-ne.",
+    "back": "Torna a avaluar"
+  },
   "footer": {
     "about": "Quant a",
-    "language": "Llengua"
+    "language": "Llengua",
+    "guidelines": "Guia de transcripció"
   },
   "about": {
     "title": "Sobre aquest projecte",

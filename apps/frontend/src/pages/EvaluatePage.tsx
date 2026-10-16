@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api';
 import { AudioPlayer } from '../components/AudioPlayer';
+import { TranscriptionGuidelines } from '../components/TranscriptionGuidelines';
 import type { Clip, UniqueTranscription, VoteSummary, Vote } from '../types';
 import { DIMENSIONS, DIALECT_VALUES, IRRELEVANT_REASONS, type Dimension, type IrrelevantReason } from '../types';
 import { translateValue } from '../i18nValues';
@@ -634,17 +635,6 @@ export function EvaluatePage({ username }: Props) {
                       {t('evaluate.skip')}
                     </button>
                   </div>
-                  <div className="mt-4 pt-4 border-t border-gray-100">
-                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-                      {t('evaluate.transcriptionGuidelinesTitle')}
-                    </p>
-                    <ul className="text-xs text-gray-500 list-disc list-inside space-y-1.5">
-                      <li>{t('evaluate.transcriptionGuideline1')}</li>
-                      <li>{t('evaluate.transcriptionGuideline2')}</li>
-                      <li>{t('evaluate.transcriptionGuideline3')}</li>
-                      <li>{t('evaluate.transcriptionGuideline4')}</li>
-                    </ul>
-                  </div>
                 </div>
               );
             }
@@ -824,6 +814,9 @@ export function EvaluatePage({ username }: Props) {
               </button>
             </div>
           )}
+
+          {/* Always visible under the CTAs (collapsible, state persisted) so reviewers can judge the text */}
+          {dimension === 'transcription' && <TranscriptionGuidelines />}
 
           {/* Not relevant flag + report an issue */}
           <div className="flex justify-center items-center gap-4">

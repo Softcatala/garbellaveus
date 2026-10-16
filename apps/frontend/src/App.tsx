@@ -5,6 +5,7 @@ import { ListPage } from './pages/ListPage';
 import { EvaluatePage } from './pages/EvaluatePage';
 import { ClipDetailPage } from './pages/ClipDetailPage';
 import { AboutPage } from './pages/AboutPage';
+import { GuidelinesPage } from './pages/GuidelinesPage';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 
@@ -32,6 +33,7 @@ function App() {
             <Route path="/evaluate" element={<EvaluatePage username={username} />} />
             <Route path="/clip/:id" element={<ClipDetailPage />} />
             <Route path="/about" element={<AboutPage />} />
+            <Route path="/guidelines" element={<GuidelinesPage />} />
           </Routes>
         </div>
         <Footer />

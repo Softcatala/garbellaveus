@@ -13,6 +13,8 @@ export function Footer() {
   return (
     <footer className="mt-12 py-4 border-t border-gray-100 text-center text-xs text-gray-400">
       <Link to="/about" className="hover:text-gray-600">{t('footer.about')}</Link>
+      <span className="mx-3 text-gray-200">|</span>
+      <Link to="/guidelines" className="hover:text-gray-600">{t('footer.guidelines')}</Link>
       {FORCED_LANGUAGE === null && (
         <>
           <span className="mx-3 text-gray-200">|</span>

@@ -99,11 +99,6 @@
     "genderIncorrectFemale": "👎 No, she's female",
     "correctionPrompt": "Would you mind correcting it?",
     "saveCorrection": "Save",
-    "transcriptionGuidelinesTitle": "What makes a good transcription",
-    "transcriptionGuideline1": "Use standard punctuation (commas, periods, question and exclamation marks) to match what's said.",
-    "transcriptionGuideline2": "Capitalise the start of each sentence and proper nouns (names, places).",
-    "transcriptionGuideline3": "Write numbers, abbreviations and hesitations the way they're actually pronounced.",
-    "transcriptionGuideline4": "Don't add words that weren't said, and don't leave out any that were.",
     "dialectPickerPrompt": "Which dialect is it actually?",
     "dialectPickerPlaceholder": "Select the correct dialect…",
     "recordDialect": "Record dialect",
@@ -131,9 +126,120 @@
     "alreadyVoted": "You already voted {{emoji}} on this clip for {{dimension}}. Voting again will update your choice.",
     "correctedDimension": "You corrected {{dimension}}: it now shows {{value}}. Voting again will update your choice."
   },
+  "guidelines": {
+    "title": "What makes a good transcription",
+    "show": "Show",
+    "hide": "Hide",
+    "short": [
+      "Transcribe literally what you hear: including Spanish-isms, grammatical mistakes and dialect forms (e.g. \"eixes\").",
+      "Include hesitations and interjections: \"eh\", \"mmm\", \"a veure\"…",
+      "Don't add or omit words, and don't \"improve\" what the speaker said.",
+      "Use punctuation and capital letters (sentence starts, proper nouns).",
+      "Numbers can be written as digits (2015); abbreviations as they are pronounced."
+    ],
+    "moreLink": "Reasons and examples",
+    "pageTitle": "Transcription guide",
+    "pageIntro": "This guide explains what we look for in a good transcription and why. Listen to the audio carefully and read the text closely: every evaluation helps train Catalan speech recognition models.",
+    "rulesTitle": "The guidelines, one by one",
+    "whyLabel": "Why?",
+    "audioLabel": "Audio",
+    "wrongLabel": "Incorrect",
+    "rightLabel": "Correct",
+    "rules": [
+      {
+        "title": "Be literal: write what is said, not what \"should\" be said",
+        "text": "The transcription must faithfully reflect speech, including Spanish-isms (\"en quant a\", \"m'agradaria destacar una cosa\") and grammatical mistakes. Don't correct them.",
+        "why": "This keeps as much information as possible. If something needs to be removed later it can be done automatically; adding it back would require someone to redo the work we are doing now.",
+        "examples": [
+          {
+            "audio": "en quant a l'aprovació del pressupost, doncs…",
+            "wrong": "Pel que fa a l'aprovació del pressupost, doncs…",
+            "right": "En quant a l'aprovació del pressupost, doncs…"
+          }
+        ]
+      },
+      {
+        "title": "Dialect forms and vocabulary: respect the speaker's variety",
+        "text": "If the proposed text has \"normalised\" a word or grammatical form but the audio is clearly different, correct it.",
+        "why": "The dataset is used to train models that must understand every variety of Catalan. If transcriptions flatten dialects, models learn that everyone speaks the same way.",
+        "examples": [
+          {
+            "audio": "eixes cases són molt antigues",
+            "wrong": "Aquestes cases són molt antigues",
+            "right": "Eixes cases són molt antigues"
+          }
+        ]
+      },
+      {
+        "title": "Hesitations and interjections: include them",
+        "text": "Write \"eh\", \"mmm\", \"bé\", \"a veure\", repetitions and abandoned sentence starts as they are pronounced.",
+        "why": "They are part of real speech and recognition models must handle them. Stripping them from a text is trivial; adding them afterwards is not.",
+        "examples": [
+          {
+            "audio": "eh… a veure, jo crec que, que sí",
+            "wrong": "Jo crec que sí.",
+            "right": "Eh… a veure, jo crec que, que sí."
+          }
+        ]
+      },
+      {
+        "title": "No more, no fewer words",
+        "text": "Don't add words that weren't said or leave out any that were, even if the sentence would read better or shorter.",
+        "why": "A transcription is only useful for training if text and audio match. An extra or missing word puts noise straight into the data.",
+        "examples": [
+          {
+            "audio": "avui parlarem del pressupost de l'any vinent",
+            "wrong": "Avui parlarem del pressupost.",
+            "right": "Avui parlarem del pressupost de l'any vinent."
+          }
+        ]
+      },
+      {
+        "title": "Punctuation and capitals: yes, standard ones",
+        "text": "Use commas, periods, question and exclamation marks following intonation and meaning, and capitalise sentence starts and proper nouns.",
+        "why": "We deliberately apply no normalisation. Current models such as Whisper are trained with punctuation and capitalisation; keeping them leaves the door open for future decisions. Removing them is easy; adding them is not.",
+        "examples": [
+          {
+            "audio": "bon dia a tothom avui parlarem de l'ajuntament de girona",
+            "wrong": "bon dia a tothom avui parlarem de l'ajuntament de girona",
+            "right": "Bon dia a tothom. Avui parlarem de l'Ajuntament de Girona."
+          }
+        ]
+      },
+      {
+        "title": "Numbers and abbreviations",
+        "text": "Write numbers and dates as digits: there's no need to write \"dos mil quinze\" instead of \"2015\". Abbreviations, on the other hand, are written as pronounced (if the speaker says \"senyor\", don't write \"Sr.\").",
+        "why": "Converting digits to words can be done programmatically and reliably. The other direction is harder, and digits are more natural to read and write.",
+        "examples": [
+          {
+            "audio": "l'any dos mil quinze vam aprovar el pla",
+            "wrong": "",
+            "right": "L'any 2015 vam aprovar el pla."
+          },
+          {
+            "audio": "el senyor alcalde ha dit…",
+            "wrong": "Sr. alcalde ha dit…",
+            "right": "El senyor alcalde ha dit…"
+          }
+        ]
+      }
+    ],
+    "scoringTitle": "How transcriptions are validated",
+    "scoring": [
+      "Each \"Correct\" vote adds one point and each \"Incorrect\" vote subtracts one.",
+      "Once a transcription reaches two points it is considered valid.",
+      "When someone corrects a transcription, the correction gets one point, but another person still has to mark it correct for it to be considered valid.",
+      "If two people submit a correction with exactly the same text, their points add up and count as a single validation.",
+      "No normalisation of the text (punctuation, capitals, numbers…) is applied, deliberately, to avoid losing information. We can always normalise and merge later if we see fit."
+    ],
+    "imperfectTitle": "If you're unsure",
+    "imperfectText": "If a word is hard to make out, do your best; if the clip is impossible to evaluate, you can skip it or report it.",
+    "back": "Back to evaluating"
+  },
   "footer": {
     "about": "About",
-    "language": "Language"
+    "language": "Language",
+    "guidelines": "Transcription guide"
   },
   "about": {
     "title": "About this project",

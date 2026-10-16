@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { ROUTES } from '../routes';
 
 interface Example { audio: string; wrong: string; right: string }
 interface Rule { title: string; text: string; why: string; examples: Example[] }
@@ -15,7 +16,7 @@ export function GuidelinesPage() {
     <div className="max-w-2xl mx-auto px-4 py-6">
       <div className="flex items-center justify-end mb-6">
         <Link
-          to="/evaluate"
+          to={ROUTES.evaluate}
           className="bg-brand-600 hover:bg-brand-700 text-white px-4 py-1.5 rounded-lg text-sm font-medium transition"
         >
           {t('guidelines.back')}

@@ -6,6 +6,7 @@ import { AudioPlayer } from '../components/AudioPlayer';
 import type { ClipWithBest, Transcription, VoteSummary } from '../types';
 import { translateValue } from '../i18nValues';
 import { resolveDimension } from '../voteUtils';
+import { ROUTES } from '../routes';
 
 function originBadge(origin: string) {
   const colours: Record<string, string> = {
@@ -61,7 +62,7 @@ export function ClipDetailPage() {
     return (
       <div className="max-w-2xl mx-auto px-4 py-12">
         <div className="text-red-500 bg-red-50 rounded-lg p-4 mb-4">{error}</div>
-        <Link to="/list" className="text-brand-600 hover:underline text-sm">{t('detail.backToList')}</Link>
+        <Link to={ROUTES.list} className="text-brand-600 hover:underline text-sm">{t('detail.backToList')}</Link>
       </div>
     );
   }
@@ -100,9 +101,9 @@ export function ClipDetailPage() {
     <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <Link to="/list" className="text-brand-600 hover:underline text-sm">{t('detail.backToList')}</Link>
+        <Link to={ROUTES.list} className="text-brand-600 hover:underline text-sm">{t('detail.backToList')}</Link>
         <Link
-          to="/evaluate"
+          to={ROUTES.evaluate}
           className="bg-brand-600 hover:bg-brand-700 text-white px-4 py-1.5 rounded-lg text-sm font-medium transition"
         >
           {t('detail.evaluate')}

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api';
+import { ROUTES } from '../routes';
 
 interface DimStat { dimension: string; evaluated: number; golden: number; evaluatedHours: number; goldenHours: number }
 interface Stats { dimensions: DimStat[]; flaggedIrrelevant: number; totalHours: number }
@@ -78,13 +79,13 @@ export function HomePage() {
 
       <div className="flex flex-col sm:flex-row gap-4">
         <Link
-          to="/evaluate"
+          to={ROUTES.evaluate}
           className="flex-1 text-center bg-brand-600 hover:bg-brand-700 text-white font-semibold py-4 rounded-xl transition text-lg"
         >
           {t('home.ctaEvaluate')}
         </Link>
         <Link
-          to="/list"
+          to={ROUTES.list}
           className="flex-1 text-center bg-white hover:bg-gray-50 text-brand-600 border border-brand-200 font-semibold py-4 rounded-xl transition text-lg"
         >
           {t('home.ctaExplore')}

@@ -8,6 +8,7 @@ import { AboutPage } from './pages/AboutPage';
 import { GuidelinesPage } from './pages/GuidelinesPage';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
+import { ROUTES, LEGACY_ROUTES } from './routes';
 
 const USERNAME_KEY = 'catvoice:username';
 
@@ -28,12 +29,17 @@ function App() {
         <Header />
         <div className="flex-1">
           <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/list" element={<ListPage />} />
-            <Route path="/evaluate" element={<EvaluatePage username={username} />} />
-            <Route path="/clip/:id" element={<ClipDetailPage />} />
-            <Route path="/about" element={<AboutPage />} />
-            <Route path="/guidelines" element={<GuidelinesPage />} />
+            <Route path={ROUTES.home} element={<HomePage />} />
+            <Route path={ROUTES.list} element={<ListPage />} />
+            <Route path={ROUTES.evaluate} element={<EvaluatePage username={username} />} />
+            <Route path={ROUTES.clip(':id')} element={<ClipDetailPage />} />
+            <Route path={ROUTES.about} element={<AboutPage />} />
+            <Route path={ROUTES.guidelines} element={<GuidelinesPage />} />
+            {/* Legacy English paths, kept for backwards compatibility */}
+            <Route path={LEGACY_ROUTES.list} element={<ListPage />} />
+            <Route path={LEGACY_ROUTES.evaluate} element={<EvaluatePage username={username} />} />
+            <Route path={LEGACY_ROUTES.about} element={<AboutPage />} />
+            <Route path={LEGACY_ROUTES.guidelines} element={<GuidelinesPage />} />
           </Routes>
         </div>
         <Footer />

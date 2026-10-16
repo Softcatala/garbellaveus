@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { api } from '../api';
 import type { ClipWithBest } from '../types';
 import { translateValue } from '../i18nValues';
+import { ROUTES } from '../routes';
 
 export function ListPage() {
   const { t, i18n } = useTranslation();
@@ -64,7 +65,7 @@ export function ListPage() {
           {items.map(({ clip, bestTranscription, voteSummary }) => (
             <Link
               key={clip.clipId}
-              to={`/clip/${clip.clipId}`}
+              to={ROUTES.clip(clip.clipId)}
               className="block bg-white rounded-xl border border-gray-200 hover:border-brand-300 hover:shadow-sm transition p-4"
             >
               <div className="flex items-start justify-between gap-3">

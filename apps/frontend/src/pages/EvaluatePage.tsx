@@ -8,6 +8,7 @@ import type { Clip, UniqueTranscription, VoteSummary, Vote } from '../types';
 import { DIMENSIONS, DIALECT_VALUES, IRRELEVANT_REASONS, type Dimension, type IrrelevantReason } from '../types';
 import { translateValue } from '../i18nValues';
 import { resolveDimension } from '../voteUtils';
+import { ROUTES } from '../routes';
 
 const SKIP_STORAGE_KEY = 'catvoice:skipped';
 
@@ -451,7 +452,7 @@ export function EvaluatePage({ username }: Props) {
       : t('evaluate.incorrect');
 
   const copyClipUrl = (clipId: string) => {
-    navigator.clipboard.writeText(`${window.location.origin}/clip/${clipId}`);
+    navigator.clipboard.writeText(`${window.location.origin}${ROUTES.clip(clipId)}`);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   };
@@ -497,7 +498,7 @@ export function EvaluatePage({ username }: Props) {
         <p className="text-gray-500 mb-6">{t('evaluate.allDoneDescription')}</p>
         <button onClick={() => loadNext()} className="btn-primary mr-3">{t('evaluate.startOver')}</button>
         <button onClick={backToDimensionPicker} className="btn-secondary mr-3">{t('evaluate.evaluateOtherDimension')}</button>
-        <Link to="/list" className="btn-secondary">{t('evaluate.backToList')}</Link>
+        <Link to={ROUTES.list} className="btn-secondary">{t('evaluate.backToList')}</Link>
       </div>
     );
   }

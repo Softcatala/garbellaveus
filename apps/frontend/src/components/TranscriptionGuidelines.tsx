@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { ROUTES } from '../routes';
 
 const OPEN_STORAGE_KEY = 'garbellaveus:guidelinesOpen';
 
@@ -39,7 +40,7 @@ export function TranscriptionGuidelines() {
           <ul className="text-xs text-gray-600 list-disc list-inside space-y-1.5">
             {rules.map((rule) => <li key={rule}>{rule}</li>)}
           </ul>
-          <Link to="/guidelines" className="inline-block mt-3 text-xs text-brand-600 hover:underline">
+          <Link to={ROUTES.guidelines} className="inline-block mt-3 text-xs text-brand-600 hover:underline">
             {t('guidelines.moreLink')} →
           </Link>
         </div>

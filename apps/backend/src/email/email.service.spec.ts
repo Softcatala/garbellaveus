@@ -1,8 +1,10 @@
 import { EmailService } from './email.service';
+import { MetricsService } from '../observability/metrics.service';
 import { verifyConfirmToken, verifyUnsubscribeToken } from './email-token';
 
 describe('EmailService', () => {
-  const service = new EmailService();
+  const metrics = new MetricsService();
+  const service = new EmailService(metrics);
   const saved = { ...process.env };
 
   beforeEach(() => {
@@ -50,5 +52,19 @@ describe('EmailService', () => {
   it('does not send without SMTP_HOST', async () => {
     expect(service.smtpConfigured).toBe(false);
     expect(await service.send(service.buildConfirmation('a@b.cat', 'u1'))).toBe(false);
+    expect((await metrics.emailsTotal.get()).values).toEqual([
+      expect.objectContaining({ labels: { kind: 'confirmation', outcome: 'not_configured' }, value: 1 }),
+    ]);
+  });
+
+  it('counts a transport failure as failed, rethrows it, and sendQuietly swallows it', async () => {
+    process.env.SMTP_HOST = '127.0.0.1';
+    process.env.SMTP_PORT = '1'; // nothing listens here
+    process.env.SMTP_SECURITY = 'none';
+    const message = service.buildReminder('a@b.cat', 1);
+    await expect(service.send(message)).rejects.toBeDefined();
+    expect(await service.sendQuietly(message, 'reminder')).toBe(false);
+    const failed = (await metrics.emailsTotal.get()).values.find((v) => v.labels.outcome === 'failed');
+    expect(failed).toMatchObject({ labels: { kind: 'reminder', outcome: 'failed' }, value: 2 });
   });
 });

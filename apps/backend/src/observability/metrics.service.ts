@@ -79,6 +79,26 @@ export class MetricsService {
     registers: [this.registry],
   });
 
+  readonly emailsTotal = new client.Counter({
+    name: 'catvoice_emails_total',
+    help: 'Transactional emails, by kind and outcome',
+    labelNames: ['kind', 'outcome'], // kind: confirmation | reminder; outcome: sent | failed | not_configured
+    registers: [this.registry],
+  });
+
+  readonly emailSubscriptionEventsTotal = new client.Counter({
+    name: 'catvoice_email_subscription_events_total',
+    help: 'Email opt-in lifecycle events',
+    labelNames: ['event'], // requested | rate_limited | confirmed | unsubscribed
+    registers: [this.registry],
+  });
+
+  readonly emailSubscribers = new client.Gauge({
+    name: 'catvoice_email_subscribers',
+    help: 'Confirmed email addresses currently subscribed',
+    registers: [this.registry],
+  });
+
   constructor() {
     client.collectDefaultMetrics({ register: this.registry });
   }

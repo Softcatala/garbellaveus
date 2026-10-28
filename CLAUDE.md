@@ -209,6 +209,10 @@ needed. Modelled on Arena Cat (`Softcatala/arena-cat`: `email_service.py`,
   voting happen on the site, never from the email. The `emailReminders` flag cannot
   gate this (it is browser-side): reminders only ever go to people who opted in
   through the flagged prompt.
+- **Metrics**: `catvoice_emails_total{kind,outcome}` (sent | failed |
+  not_configured), `catvoice_email_subscription_events_total{event}` (requested |
+  rate_limited | confirmed | unsubscribed) and the gauge `catvoice_email_subscribers`,
+  charted in the GarbellaVeus dashboard in `docker/monitor`.
 - **Env**: `HMAC_SECRET_KEY` (required for these routes), `FRONTEND_BASE_URL`,
   `SMTP_HOST/PORT/SECURITY/USER/PASSWORD`, `EMAIL_FROM_ADDRESS/NAME`. With
   `SMTP_HOST` empty, emails are written to the log instead of sent.

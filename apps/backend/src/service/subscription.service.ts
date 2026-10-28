@@ -1,10 +1,11 @@
-import { BadRequestException, HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { BadRequestException, HttpException, HttpStatus, Injectable, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { EmailSubscription } from '../domain/email-subscription.entity';
 import { EmailUuidLink } from '../domain/email-uuid-link.entity';
 import { Vote } from '../domain/vote.entity';
 import { EmailService } from '../email/email.service';
+import { MetricsService } from '../observability/metrics.service';
 import { normalizeEmail, verifyConfirmToken, verifyUnsubscribeToken } from '../email/email-token';
 
 // Bumped whenever the consent wording shown in the prompt changes materially.
@@ -19,7 +20,7 @@ const GLOBAL_HOURLY_CAP = 100;
 const HOUR_MS = 3_600_000;
 
 @Injectable()
-export class SubscriptionService {
+export class SubscriptionService implements OnModuleInit {
   private readonly lastRequest = new Map<string, number>();
   private recentRequests: number[] = [];
 
@@ -28,7 +29,17 @@ export class SubscriptionService {
     @InjectRepository(EmailUuidLink) private readonly links: Repository<EmailUuidLink>,
     @InjectRepository(Vote) private readonly votes: Repository<Vote>,
     private readonly email: EmailService,
+    private readonly metrics: MetricsService,
   ) {}
+
+  // Prime the gauge from the database so it is right after a restart.
+  async onModuleInit(): Promise<void> {
+    await this.refreshSubscriberGauge();
+  }
+
+  private async refreshSubscriberGauge(): Promise<void> {
+    this.metrics.emailSubscribers.set(await this.subscriptions.count());
+  }
 
   private checkRateLimit(email: string, username: string, now: number): void {
     this.recentRequests = this.recentRequests.filter((t) => now - t < HOUR_MS);
@@ -36,7 +47,10 @@ export class SubscriptionService {
     const limited =
       this.recentRequests.length >= GLOBAL_HOURLY_CAP ||
       keys.some((k) => now - (this.lastRequest.get(k) ?? -Infinity) < COOLDOWN_MS);
-    if (limited) throw new HttpException('Too many requests', HttpStatus.TOO_MANY_REQUESTS);
+    if (limited) {
+      this.metrics.emailSubscriptionEventsTotal.inc({ event: 'rate_limited' });
+      throw new HttpException('Too many requests', HttpStatus.TOO_MANY_REQUESTS);
+    }
     for (const k of keys) this.lastRequest.set(k, now);
     this.recentRequests.push(now);
     // Opportunistic cleanup so the map cannot grow without bound.
@@ -52,6 +66,7 @@ export class SubscriptionService {
     const email = normalizeEmail(rawEmail);
     this.checkRateLimit(email, username, Date.now());
 
+    this.metrics.emailSubscriptionEventsTotal.inc({ event: 'requested' });
     const existing = await this.subscriptions.findOne({ where: { email } });
     if (existing && (await this.links.findOne({ where: { subscriptionId: existing.id, username } }))) {
       return; // already confirmed from this browser; nothing to do
@@ -81,7 +96,9 @@ export class SubscriptionService {
     const link = await this.links.findOne({ where: { subscriptionId: subscription.id, username: payload.username } });
     if (!link) {
       await this.links.save(this.links.create({ subscriptionId: subscription.id, username: payload.username }));
+      this.metrics.emailSubscriptionEventsTotal.inc({ event: 'confirmed' });
     }
+    await this.refreshSubscriberGauge();
   }
 
   // Drives the prompt: how many clips this username has answered (positive or
@@ -107,5 +124,7 @@ export class SubscriptionService {
     if (!subscription) return;
     await this.links.delete({ subscriptionId: subscription.id });
     await this.subscriptions.delete(subscription.id);
+    this.metrics.emailSubscriptionEventsTotal.inc({ event: 'unsubscribed' });
+    await this.refreshSubscriberGauge();
   }
 }

@@ -1,11 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { createTransport } from 'nodemailer';
 import { confirmationEmail, reminderEmail, EmailContent, ClipCard } from './email-templates';
+import { MetricsService } from '../observability/metrics.service';
 import { CONFIRM_TTL_HOURS, createConfirmToken, createUnsubscribeToken } from './email-token';
 
 const SMTP_TIMEOUT_MS = 10_000;
 
 export interface OutgoingEmail extends EmailContent {
+  kind: 'confirmation' | 'reminder';
   to: string;
   headers?: Record<string, string>;
 }
@@ -16,6 +18,8 @@ export interface OutgoingEmail extends EmailContent {
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
+
+  constructor(private readonly metrics: MetricsService) {}
 
   get smtpConfigured(): boolean {
     return !!process.env.SMTP_HOST;
@@ -40,7 +44,7 @@ export class EmailService {
   }
 
   buildConfirmation(email: string, username: string): OutgoingEmail {
-    return { to: email, ...confirmationEmail(this.confirmationLink(email, username), CONFIRM_TTL_HOURS) };
+    return { kind: 'confirmation', to: email, ...confirmationEmail(this.confirmationLink(email, username), CONFIRM_TTL_HOURS) };
   }
 
   // Deep link to the evaluate page on one clip. A plain GET that only opens the
@@ -54,6 +58,7 @@ export class EmailService {
     const card: ClipCard | undefined = clip && { text: clip.text, link: this.clipLink(clip.clipId) };
     const content = reminderEmail(clips, this.frontendBaseUrl, this.unsubscribeLink(email), card);
     return {
+      kind: 'reminder',
       to: email,
       ...content,
       headers: {
@@ -68,6 +73,7 @@ export class EmailService {
   async send(message: OutgoingEmail): Promise<boolean> {
     if (!this.smtpConfigured) {
       this.logger.warn(`SMTP not configured; not sending "${message.subject}":\n${message.text}`);
+      this.metrics.emailsTotal.inc({ kind: message.kind, outcome: 'not_configured' });
       return false;
     }
     const security = process.env.SMTP_SECURITY || 'starttls';
@@ -96,7 +102,11 @@ export class EmailService {
         html: message.html,
         headers: message.headers,
       });
+      this.metrics.emailsTotal.inc({ kind: message.kind, outcome: 'sent' });
       return true;
+    } catch (error) {
+      this.metrics.emailsTotal.inc({ kind: message.kind, outcome: 'failed' });
+      throw error;
     } finally {
       transport.close();
     }

@@ -3,6 +3,7 @@ import { TypeOrmModule, getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SubscriptionService } from './subscription.service';
 import { EmailService } from '../email/email.service';
+import { MetricsService } from '../observability/metrics.service';
 import { EmailSubscription } from '../domain/email-subscription.entity';
 import { EmailUuidLink } from '../domain/email-uuid-link.entity';
 import { Clip } from '../domain/clip.entity';
@@ -16,6 +17,7 @@ describe('SubscriptionService', () => {
   let subs: Repository<EmailSubscription>;
   let links: Repository<EmailUuidLink>;
   let votes: Repository<Vote>;
+  let metrics: MetricsService;
   const email = { sendQuietly: jest.fn().mockResolvedValue(true), buildConfirmation: jest.fn((to: string, u: string) => ({ to, u })) };
 
   beforeAll(() => {
@@ -36,9 +38,10 @@ describe('SubscriptionService', () => {
         }),
         TypeOrmModule.forFeature([EmailSubscription, EmailUuidLink, Vote, Clip]),
       ],
-      providers: [SubscriptionService, { provide: EmailService, useValue: email }],
+      providers: [SubscriptionService, MetricsService, { provide: EmailService, useValue: email }],
     }).compile();
     service = module.get(SubscriptionService);
+    metrics = module.get(MetricsService);
     subs = module.get(getRepositoryToken(EmailSubscription));
     links = module.get(getRepositoryToken(EmailUuidLink));
     votes = module.get(getRepositoryToken(Vote));
@@ -101,6 +104,26 @@ describe('SubscriptionService', () => {
       await expect(service.confirm('nonsense')).rejects.toMatchObject({ status: 400 });
       await expect(service.confirm(createUnsubscribeToken('a@b.cat'))).rejects.toMatchObject({ status: 400 });
       expect(await subs.count()).toBe(0);
+    });
+  });
+
+  describe('metrics', () => {
+    const events = async () => {
+      const out: Record<string, number> = {};
+      for (const v of (await metrics.emailSubscriptionEventsTotal.get()).values) out[v.labels.event as string] = v.value;
+      return out;
+    };
+    const subscribers = async () => (await metrics.emailSubscribers.get()).values[0]?.value;
+
+    it('counts requests, rate limiting, confirmations and unsubscribes and tracks the subscriber gauge', async () => {
+      await service.requestConfirmation('a@b.cat', 'u1');
+      await expect(service.requestConfirmation('a@b.cat', 'u1')).rejects.toBeDefined();
+      await service.confirm(createConfirmToken('a@b.cat', 'u1'));
+      await service.confirm(createConfirmToken('a@b.cat', 'u1')); // idempotent: not counted again
+      expect(await subscribers()).toBe(1);
+      await service.unsubscribe(createUnsubscribeToken('a@b.cat'));
+      expect(await subscribers()).toBe(0);
+      expect(await events()).toEqual({ requested: 1, rate_limited: 1, confirmed: 1, unsubscribed: 1 });
     });
   });
 

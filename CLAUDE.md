@@ -195,20 +195,20 @@ needed. Modelled on Arena Cat (`Softcatala/arena-cat`: `email_service.py`,
   at most 3 in a row without a new vote. Disabled unless `SMTP_HOST` is set (or
   `REMINDERS_ENABLED=false`). Runs in the backend process rather than a separate
   container because the DB is a single SQLite file.
-- **Feature flag**: the prompt is gated behind the client-side flag `emailReminders`
-  (`frontend/src/flags.ts`, localStorage `catvoice:flags`), toggled at the unlinked
-  page `/banderes`. It hides UI only; the backend routes stay open. The
-  `/confirma-correu` and `/baixa-correu` pages are deliberately not gated so
-  emailed links always work. To launch for everyone, make `isEnabled` return true
-  for that flag (or delete the check in `EvaluatePage.maybePromptForEmail`).
+- **Feature flags**: client-side machinery in `frontend/src/flags.ts` (localStorage
+  `catvoice:flags`, switchboard at the unlinked page `/banderes`). The email prompt
+  used to be gated behind `emailReminders`; it is now generally available and no
+  flags are currently defined. To ship something dark, add it to `FLAGS`, gate the
+  code with `isEnabled('name')`, and toggle it per browser. UI only — not access
+  control: backend routes stay reachable. The `/confirma-correu` and `/baixa-correu`
+  pages are never gated so emailed links always work.
 - **Clip card**: each reminder shows one clip's transcription with an "Escolta el
   tall i valida" button deep-linking to `/avalua?clipId=…&dimension=transcription`
   (picked with `ClipService.nextForEvaluation`, skipping clips any linked UUID has
   answered; no card if none is found). Email clients can't play audio and mail
   scanners prefetch links, so the link only opens the page — hearing the audio and
-  voting happen on the site, never from the email. The `emailReminders` flag cannot
-  gate this (it is browser-side): reminders only ever go to people who opted in
-  through the flagged prompt.
+  voting happen on the site, never from the email. Reminders only ever go
+  to people who opted in through the prompt.
 - **Metrics**: `catvoice_emails_total{kind,outcome}` (sent | failed |
   not_configured), `catvoice_email_subscription_events_total{event}` (requested |
   rate_limited | confirmed | unsubscribed) and the gauge `catvoice_email_subscribers`,

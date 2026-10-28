@@ -6,7 +6,6 @@ import { AudioPlayer } from '../components/AudioPlayer';
 import { TranscriptionGuidelines } from '../components/TranscriptionGuidelines';
 import { EmailPrompt } from '../components/EmailPrompt';
 import { shouldPrompt } from '../emailPrompt';
-import { isEnabled } from '../flags';
 import type { Clip, UniqueTranscription, VoteSummary, Vote } from '../types';
 import { DIMENSIONS, DIALECT_VALUES, IRRELEVANT_REASONS, type Dimension, type IrrelevantReason } from '../types';
 import { translateValue } from '../i18nValues';
@@ -125,7 +124,7 @@ export function EvaluatePage({ username }: Props) {
 
   // Never lets a failure here get in the way of evaluating.
   const maybePromptForEmail = useCallback(async () => {
-    if (!answeredRef.current || !isEnabled('emailReminders')) return;
+    if (!answeredRef.current) return;
     try {
       const { subscribed, validations } = await api.getSubscriptionStatus(username);
       if (shouldPrompt(validations, subscribed)) setEmailPrompt({ validations });

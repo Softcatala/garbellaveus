@@ -6,16 +6,19 @@
 
 const KEY = 'catvoice:flags';
 
-export const FLAGS = {
-  emailReminders: {
-    label: 'Recordatoris per correu',
-    description: "Mostra la invitació a deixar el correu després de 5 avaluacions (i cada 30 després d'«Ara no»).",
-  },
-} as const;
+export interface FlagDefinition {
+  label: string;
+  description: string;
+}
 
-export type FlagName = keyof typeof FLAGS;
+// No flags at the moment. To ship something dark, add it here, gate the code
+// with `isEnabled('name')`, and switch it on per browser at ROUTES.flags:
+//   myFeature: { label: 'My feature', description: 'What it does.' },
+export const FLAGS: Record<string, FlagDefinition> = {};
 
-type Stored = Partial<Record<FlagName, boolean>>;
+export type FlagName = string;
+
+type Stored = Record<string, boolean>;
 
 function read(): Stored {
   try {

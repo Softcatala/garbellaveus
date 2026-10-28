@@ -25,6 +25,7 @@ export function FlagsPage() {
     <div className="max-w-xl mx-auto px-4 py-12 space-y-4">
       <h2 className="text-xl font-bold text-gray-800">Banderes de funcionalitats</h2>
       <p className="text-sm text-gray-500">Només afecten aquest navegador.</p>
+      {NAMES.length === 0 && <p className="text-gray-500">Ara mateix no hi ha cap bandera definida.</p>}
       <ul className="space-y-3">
         {NAMES.map((name) => (
           <li key={name}>

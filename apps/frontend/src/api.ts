@@ -106,4 +106,27 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(data),
     }),
+
+  getSubscriptionStatus: (username: string) =>
+    request<{ subscribed: boolean; validations: number }>(
+      `/subscriptions/status?username=${encodeURIComponent(username)}`,
+    ),
+
+  requestEmailConfirmation: (email: string, username: string) =>
+    request<{ status: string }>('/subscriptions/request', {
+      method: 'POST',
+      body: JSON.stringify({ email, username }),
+    }),
+
+  confirmEmail: (token: string) =>
+    request<{ status: string }>('/subscriptions/confirm', {
+      method: 'POST',
+      body: JSON.stringify({ token }),
+    }),
+
+  unsubscribeEmail: (token: string) =>
+    request<{ status: string }>('/subscriptions/unsubscribe', {
+      method: 'POST',
+      body: JSON.stringify({ token }),
+    }),
 };

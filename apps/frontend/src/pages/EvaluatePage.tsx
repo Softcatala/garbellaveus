@@ -4,6 +4,9 @@ import { useTranslation } from 'react-i18next';
 import { api } from '../api';
 import { AudioPlayer } from '../components/AudioPlayer';
 import { TranscriptionGuidelines } from '../components/TranscriptionGuidelines';
+import { EmailPrompt } from '../components/EmailPrompt';
+import { shouldPrompt } from '../emailPrompt';
+import { isEnabled } from '../flags';
 import type { Clip, UniqueTranscription, VoteSummary, Vote } from '../types';
 import { DIMENSIONS, DIALECT_VALUES, IRRELEVANT_REASONS, type Dimension, type IrrelevantReason } from '../types';
 import { translateValue } from '../i18nValues';
@@ -72,6 +75,10 @@ export function EvaluatePage({ username }: Props) {
   const [reportText, setReportText] = useState('');
   const [reportSubmitting, setReportSubmitting] = useState(false);
   const [reportSubmitted, setReportSubmitted] = useState(false);
+  // Set once this page has recorded an answer (positive or negative, never a
+  // skip); the email prompt is only considered after that, not on a bare page load.
+  const answeredRef = useRef(false);
+  const [emailPrompt, setEmailPrompt] = useState<{ validations: number } | null>(null);
   // Prevents double-fetch when we push a new clipId to the URL ourselves
   const selfNavRef = useRef(false);
 
@@ -110,12 +117,30 @@ export function EvaluatePage({ username }: Props) {
     setDone(false);
   }
 
+  const castVote = async (data: Parameters<typeof api.castVote>[0]) => {
+    const vote = await api.castVote(data);
+    answeredRef.current = true;
+    return vote;
+  };
+
+  // Never lets a failure here get in the way of evaluating.
+  const maybePromptForEmail = useCallback(async () => {
+    if (!answeredRef.current || !isEnabled('emailReminders')) return;
+    try {
+      const { subscribed, validations } = await api.getSubscriptionStatus(username);
+      if (shouldPrompt(validations, subscribed)) setEmailPrompt({ validations });
+    } catch {
+      /* ignore */
+    }
+  }, [username]);
+
   const loadNext = useCallback(async (skipAdditional: string[] = []) => {
     setLoading(true);
     resetUi();
     const skipped = [...getSkipped(), ...skipAdditional];
     try {
       const data = await api.evaluateNext(username, dimension, skipped);
+      void maybePromptForEmail();
       if (data.done) {
         setDone(true);
         setState(null);
@@ -131,7 +156,7 @@ export function EvaluatePage({ username }: Props) {
     } finally {
       setLoading(false);
     }
-  }, [username, dimension, currentClipId, setSearchParams]);
+  }, [username, dimension, currentClipId, setSearchParams, maybePromptForEmail]);
 
   const loadClip = useCallback(async (clipId: string) => {
     setLoading(true);
@@ -283,7 +308,7 @@ export function EvaluatePage({ username }: Props) {
       try {
         const originalId = await resolveOriginalTranscriptionId();
         if (originalId) {
-          await api.castVote({ clipId: state.clip.clipId, dimension: 'transcription', targetId: originalId, username, value: -1 });
+          await castVote({ clipId: state.clip.clipId, dimension: 'transcription', targetId: originalId, username, value: -1 });
         }
         const best = state.uniqueTranscriptions[0];
         setEditText(best?.text ?? state.clip.candidate1 ?? state.clip.candidate2 ?? '');
@@ -320,18 +345,18 @@ export function EvaluatePage({ username }: Props) {
         targetId = dialectResolved.value ?? undefined;
       }
 
-      await api.castVote({ clipId: state.clip.clipId, dimension, targetId, username, value });
+      await castVote({ clipId: state.clip.clipId, dimension, targetId, username, value });
 
       // Binary gender: an "incorrect" vote deterministically implies the other value,
       // so raise it as a competing candidate for the next evaluator to confirm.
       if (dimension === 'gender' && value === -1 && targetId) {
         const opposite = targetId === 'male' ? 'female' : 'male';
-        await api.castVote({ clipId: state.clip.clipId, dimension, targetId: opposite, username, value: 1 });
+        await castVote({ clipId: state.clip.clipId, dimension, targetId: opposite, username, value: 1 });
       }
 
       // Dialect: the evaluator explicitly chose the correct value in the picker above.
       if (dimension === 'dialect' && value === -1 && selectedDialect) {
-        await api.castVote({ clipId: state.clip.clipId, dimension, targetId: selectedDialect, username, value: 1 });
+        await castVote({ clipId: state.clip.clipId, dimension, targetId: selectedDialect, username, value: 1 });
       }
 
       loadNext();
@@ -361,7 +386,7 @@ export function EvaluatePage({ username }: Props) {
     setVoting(true);
     try {
       const newT = await api.createTranscription({ clipId: state.clip.clipId, origin: 'human', text: corrected });
-      await api.castVote({ clipId: state.clip.clipId, dimension: 'transcription', targetId: String(newT.id), username, value: 1 });
+      await castVote({ clipId: state.clip.clipId, dimension: 'transcription', targetId: String(newT.id), username, value: 1 });
       loadNext();
     } catch (e) {
       setError(String(e));
@@ -377,7 +402,7 @@ export function EvaluatePage({ username }: Props) {
     if (!state || voting || !selectedDialect) return;
     setVoting(true);
     try {
-      await api.castVote({ clipId: state.clip.clipId, dimension: 'dialect', targetId: selectedDialect, username, value: 1 });
+      await castVote({ clipId: state.clip.clipId, dimension: 'dialect', targetId: selectedDialect, username, value: 1 });
       loadNext();
     } catch (e) {
       setError(String(e));
@@ -456,6 +481,10 @@ export function EvaluatePage({ username }: Props) {
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   };
+
+  if (emailPrompt) {
+    return <EmailPrompt username={username} validations={emailPrompt.validations} onDone={() => setEmailPrompt(null)} />;
+  }
 
   // No dimension chosen yet: this is the very first step after clicking
   // "Evaluate" — pick what you're evaluating before any clip loads.

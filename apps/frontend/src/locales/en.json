@@ -305,5 +305,40 @@
       "no_speech": "No speech (music/silence/noise)",
       "unintelligible": "Unintelligible speech"
     }
+  },
+  "emailPrompt": {
+    "title": "Want us to let you know when we need more help?",
+    "intro": "You've already evaluated {{count}} clips. Thank you! Leave your email and we'll tell you when we need more evaluations.",
+    "emailLabel": "Email address",
+    "frequency": "We will write at most once a week, and never more than three times in a row if you don't evaluate again. Before saving the address we'll ask you to confirm it with a link.",
+    "privacy": "Softcatalà is responsible for processing your data, with your consent, to send you these notices. You can unsubscribe from any email: the address is deleted, but your evaluations are kept anonymously. See your rights in Softcatalà's ",
+    "legalLink": "legal notice",
+    "consent": "I accept the processing of my data to receive these notices.",
+    "submit": "Send me the confirmation link",
+    "notNow": "Not now",
+    "never": "Never ask again",
+    "sentTitle": "Check your email",
+    "sentBody": "We've sent a confirmation link to {{email}}. The address won't be saved until you open it.",
+    "continue": "Keep evaluating",
+    "error": "The email could not be sent. Please try again in a moment.",
+    "tooMany": "Too many requests in a row. Wait a minute and try again."
+  },
+  "emailConfirm": {
+    "title": "Confirm your email",
+    "intro": "Confirm that you want to receive GarbellaVeus notices at this address.",
+    "incomplete": "The link is incomplete. Open the link from the email.",
+    "button": "Confirm address",
+    "done": "Thank you! Your address is confirmed. You can unsubscribe at any time from any of our emails.",
+    "error": "The link is invalid or has expired. Request a new confirmation email.",
+    "back": "Back to evaluating"
+  },
+  "emailUnsubscribe": {
+    "title": "Unsubscribe from notices",
+    "intro": "Your email address will be deleted. Your evaluations are kept anonymously.",
+    "incomplete": "The unsubscribe link is incomplete. Open the link from the email.",
+    "button": "Delete my address",
+    "done": "Done. Your address has been deleted and you won't receive more emails.",
+    "error": "Could not unsubscribe. Please try again.",
+    "back": "Back to home"
   }
 }

@@ -164,6 +164,55 @@ transcriptions and votes first**, or the delete fails while children still
 reference it (`ClipService.remove` does this in the right order — follow
 that pattern if you add other cascading deletes).
 
+## Email Reminders (opt-in)
+
+Anonymous evaluators can leave an email to be told when more evaluation is
+needed. Modelled on Arena Cat (`Softcatala/arena-cat`: `email_service.py`,
+`reminder_service.py`) but without accounts or passwords.
+
+- **Prompt** (`frontend/src/emailPrompt.ts`, `components/EmailPrompt.tsx`): shown
+  after the evaluator has answered 5 clips (positive or negative — skips never
+  count; server-side `COUNT(DISTINCT clip_id)` of their votes). "Ara no" asks
+  again 30 answered clips later; "No ho demanis mai més" is stored in
+  localStorage (`catvoice:email-prompt`) and never asks again from that browser.
+  Not shown if the UUID already has a confirmed address.
+- **Double opt-in is stateless**: `POST /subscriptions/request` stores nothing;
+  the emailed link carries an HMAC-signed token (`email/email-token.ts`, 24 h)
+  with `{email, username}`. Opening `/confirma-correu` and pressing the button
+  (not the GET itself, so link-prefetching scanners can't subscribe anyone)
+  calls `/subscriptions/confirm`, which creates the rows. Requests are
+  rate-limited in memory (60 s per address and per username, 100/h globally).
+- **Tables**: `email_subscriptions` (confirmed addresses, reminder bookkeeping)
+  and `email_uuid_links` (username ↔ subscription, many-to-many). Votes are
+  never linked to an address except through this link table.
+- **Unsubscribe / delete**: the unsubscribe token is a signature over the address
+  (no expiry). It deletes the subscription and all its links; votes stay under
+  their anonymous username. Every reminder carries the link plus
+  `List-Unsubscribe` / `List-Unsubscribe-Post` headers.
+- **Reminders** (`service/reminder.service.ts`, same rules as Arena): in-process
+  scheduler, Mondays 10:00 Europe/Madrid. Remind someone whose last vote (across
+  all UUIDs linked to the address) and last reminder are both over 7 days old;
+  at most 3 in a row without a new vote. Disabled unless `SMTP_HOST` is set (or
+  `REMINDERS_ENABLED=false`). Runs in the backend process rather than a separate
+  container because the DB is a single SQLite file.
+- **Feature flag**: the prompt is gated behind the client-side flag `emailReminders`
+  (`frontend/src/flags.ts`, localStorage `catvoice:flags`), toggled at the unlinked
+  page `/banderes`. It hides UI only; the backend routes stay open. The
+  `/confirma-correu` and `/baixa-correu` pages are deliberately not gated so
+  emailed links always work. To launch for everyone, make `isEnabled` return true
+  for that flag (or delete the check in `EvaluatePage.maybePromptForEmail`).
+- **Clip card**: each reminder shows one clip's transcription with an "Escolta el
+  tall i valida" button deep-linking to `/avalua?clipId=…&dimension=transcription`
+  (picked with `ClipService.nextForEvaluation`, skipping clips any linked UUID has
+  answered; no card if none is found). Email clients can't play audio and mail
+  scanners prefetch links, so the link only opens the page — hearing the audio and
+  voting happen on the site, never from the email. The `emailReminders` flag cannot
+  gate this (it is browser-side): reminders only ever go to people who opted in
+  through the flagged prompt.
+- **Env**: `HMAC_SECRET_KEY` (required for these routes), `FRONTEND_BASE_URL`,
+  `SMTP_HOST/PORT/SECURITY/USER/PASSWORD`, `EMAIL_FROM_ADDRESS/NAME`. With
+  `SMTP_HOST` empty, emails are written to the log instead of sent.
+
 ## API Reference
 
 | Method | Path | Notes |
@@ -183,6 +232,10 @@ that pattern if you add other cascading deletes).
 | `GET` | `/votes/clip/:clipId` | Vote summary for a clip |
 | `GET` | `/votes/clip/:clipId/user/:username` | One user's votes on a clip |
 | `GET` | `/votes/stats` | Global stats |
+| `GET` | `/subscriptions/status?username=` | `{subscribed, validations}` — drives the email prompt |
+| `POST` | `/subscriptions/request` | `{email, username}` — emails a confirmation link; stores nothing; 429 when rate-limited |
+| `POST` | `/subscriptions/confirm` | `{token}` — creates the subscription + uuid link (idempotent) |
+| `POST` | `/subscriptions/unsubscribe` | `{token}` in body or `?token=` (RFC 8058 one-click) — deletes the address and its links |
 
 🔑 = requires an `X-Api-Key` header matching the backend's `API_KEY` env var
 (`ApiKeyGuard`, `apps/backend/src/inbound/api-key.guard.ts`). This only covers

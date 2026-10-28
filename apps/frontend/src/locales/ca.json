@@ -305,5 +305,40 @@
       "no_speech": "Sense veu (música/silenci/soroll)",
       "unintelligible": "Parla inintel·ligible"
     }
+  },
+  "emailPrompt": {
+    "title": "Vols que t'avisem quan necessitem més ajuda?",
+    "intro": "Ja has avaluat {{count}} talls de veu. Gràcies! Si ens deixes el teu correu, t'avisarem quan necessitem més avaluacions.",
+    "emailLabel": "Adreça de correu",
+    "frequency": "Només t'escriurem com a molt un cop per setmana, i mai més de tres cops seguits si no tornes a avaluar. Abans de desar l'adreça et demanarem que la confirmis amb un enllaç.",
+    "privacy": "Softcatalà és responsable del tractament de les teves dades, amb el teu consentiment, per enviar-te aquests avisos. Pots donar-te de baixa des de qualsevol correu: s'eliminarà l'adreça, però les avaluacions es conservaran de forma anònima. Consulta els teus drets a l'",
+    "legalLink": "avís legal de Softcatalà",
+    "consent": "Accepto el tractament de les meves dades per rebre aquests avisos.",
+    "submit": "Envia'm l'enllaç de confirmació",
+    "notNow": "Ara no",
+    "never": "No ho demanis mai més",
+    "sentTitle": "Revisa el correu",
+    "sentBody": "Hem enviat un enllaç de confirmació a {{email}}. L'adreça no es desarà fins que l'obris.",
+    "continue": "Continua avaluant",
+    "error": "No s'ha pogut enviar el correu. Torna-ho a provar d'aquí a una estona.",
+    "tooMany": "Has fet massa peticions seguides. Espera un minut i torna-ho a provar."
+  },
+  "emailConfirm": {
+    "title": "Confirma el teu correu",
+    "intro": "Confirma que vols rebre els avisos de GarbellaVeus en aquesta adreça.",
+    "incomplete": "L'enllaç és incomplet. Obre l'enllaç del correu.",
+    "button": "Confirma l'adreça",
+    "done": "Gràcies! L'adreça queda confirmada. Pots donar-te de baixa en qualsevol moment des de qualsevol dels nostres correus.",
+    "error": "L'enllaç no és vàlid o ha caducat. Torna a demanar el correu de confirmació.",
+    "back": "Torna a l'avaluació"
+  },
+  "emailUnsubscribe": {
+    "title": "Dona't de baixa dels avisos",
+    "intro": "S'eliminarà la teva adreça de correu. Les avaluacions es conservaran de forma anònima.",
+    "incomplete": "L'enllaç de baixa és incomplet. Obre l'enllaç del correu.",
+    "button": "Elimina la meva adreça",
+    "done": "Fet. L'adreça s'ha eliminat i no rebràs més correus.",
+    "error": "No s'ha pogut fer la baixa. Torna-ho a provar.",
+    "back": "Torna a l'inici"
   }
 }

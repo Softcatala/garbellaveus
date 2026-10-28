@@ -6,6 +6,9 @@ import { EvaluatePage } from './pages/EvaluatePage';
 import { ClipDetailPage } from './pages/ClipDetailPage';
 import { AboutPage } from './pages/AboutPage';
 import { GuidelinesPage } from './pages/GuidelinesPage';
+import { ConfirmEmailPage } from './pages/ConfirmEmailPage';
+import { UnsubscribeEmailPage } from './pages/UnsubscribeEmailPage';
+import { FlagsPage } from './pages/FlagsPage';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 import { ROUTES, LEGACY_ROUTES } from './routes';
@@ -35,6 +38,9 @@ function App() {
             <Route path={ROUTES.clip(':id')} element={<ClipDetailPage />} />
             <Route path={ROUTES.about} element={<AboutPage />} />
             <Route path={ROUTES.guidelines} element={<GuidelinesPage />} />
+            <Route path={ROUTES.confirmEmail} element={<ConfirmEmailPage />} />
+            <Route path={ROUTES.unsubscribeEmail} element={<UnsubscribeEmailPage />} />
+            <Route path={ROUTES.flags} element={<FlagsPage />} />
             {/* Legacy English paths, kept for backwards compatibility */}
             <Route path={LEGACY_ROUTES.list} element={<ListPage />} />
             <Route path={LEGACY_ROUTES.evaluate} element={<EvaluatePage username={username} />} />

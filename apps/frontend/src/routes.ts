@@ -6,6 +6,10 @@ export const ROUTES = {
   evaluate: '/avalua',
   about: '/quant-a',
   guidelines: '/pautes',
+  confirmEmail: '/confirma-correu',
+  unsubscribeEmail: '/baixa-correu',
+  // Unlinked: feature-flag switchboard (see flags.ts).
+  flags: '/banderes',
   clip: (id: string) => `/clip/${id}`,
 } as const;
 

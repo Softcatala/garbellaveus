@@ -43,6 +43,8 @@ export class VoteService implements OnModuleInit {
       .createQueryBuilder('v')
       .select('v.dimension', 'dimension')
       .addSelect('SUM(v.value)', 'net')
+      // Same rule as stats(): bulk-imported suggestions don't count as human review.
+      .where('v.username NOT IN (:...usernames)', { usernames: SYSTEM_VOTE_USERNAMES })
       .groupBy('v.dimension')
       .addGroupBy('v.clip_id')
       .addGroupBy('v.target_id')
@@ -151,7 +153,11 @@ export class VoteService implements OnModuleInit {
     }
 
     this.metrics.votesCastTotal.inc({ dimension: data.dimension, value: String(data.value) });
-    await this.updateGoldenGauge(data.clipId, data.dimension, data.targetId, data.value - oldValue);
+    // The gauge only reflects human votes (see SYSTEM_VOTE_USERNAMES), so a system
+    // vote can neither create nor change a golden clip.
+    if (!SYSTEM_VOTE_USERNAMES.includes(data.username)) {
+      await this.updateGoldenGauge(data.clipId, data.dimension, data.targetId, data.value - oldValue);
+    }
 
     return saved;
   }
@@ -167,7 +173,8 @@ export class VoteService implements OnModuleInit {
     const netRow = await this.repo
       .createQueryBuilder('v')
       .select('SUM(v.value)', 'net')
-      .where('v.clip_id = :clipId', { clipId })
+      .where('v.username NOT IN (:...usernames)', { usernames: SYSTEM_VOTE_USERNAMES })
+      .andWhere('v.clip_id = :clipId', { clipId })
       .andWhere('v.dimension = :dimension', { dimension })
       .andWhere(targetId ? 'v.target_id = :targetId' : 'v.target_id IS NULL', { targetId })
       .getRawOne<{ net: string | null }>();

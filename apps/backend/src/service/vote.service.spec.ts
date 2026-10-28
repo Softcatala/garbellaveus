@@ -11,6 +11,7 @@ describe('VoteService', () => {
   let service: VoteService;
   let repo: Repository<Vote>;
   let transcriptions: Repository<Transcription>;
+  let metrics: MetricsService;
 
   beforeEach(async () => {
     const module = await Test.createTestingModule({
@@ -33,6 +34,7 @@ describe('VoteService', () => {
     service = module.get(VoteService);
     repo = module.get(getRepositoryToken(Vote));
     transcriptions = module.get(getRepositoryToken(Transcription));
+    metrics = module.get(MetricsService);
 
     // Vote.clipId is a real FK against clips, so seed the clips these tests vote on.
     const clips: Repository<Clip> = module.get(getRepositoryToken(Clip));
@@ -106,6 +108,30 @@ describe('VoteService', () => {
     // ...but it still surfaces as a real candidate for a human to confirm/reject.
     const summary = await service.summaryForClip('clip-2');
     expect(summary.find((s) => s.targetId === 'valencian')).toMatchObject({ netVotes: 1, isGolden: false });
+  });
+
+  describe('golden gauge', () => {
+    const golden = async (dimension: string) =>
+      (await metrics.clipsGoldenTotal.get()).values.find((v) => v.labels.dimension === dimension)?.value ?? 0;
+
+    it('ignores the bulk-import account: its suggestion plus one human confirmation is not golden', async () => {
+      await service.cast({ clipId: 'clip-2', dimension: 'dialect', targetId: 'valencian', username: 'derivat-de-poblacio', value: 1 });
+      await service.cast({ clipId: 'clip-2', dimension: 'dialect', targetId: 'valencian', username: 'alice', value: 1 });
+      expect(await golden('dialect')).toBe(0);
+      // summaryForClip keeps counting every voter, so the app can still surface the suggestion.
+      expect((await service.summaryForClip('clip-2')).find((s) => s.targetId === 'valencian')).toMatchObject({ netVotes: 2 });
+
+      await service.cast({ clipId: 'clip-2', dimension: 'dialect', targetId: 'valencian', username: 'bob', value: 1 });
+      expect(await golden('dialect')).toBe(1); // two humans
+    });
+
+    it('is primed the same way after a restart', async () => {
+      await service.cast({ clipId: 'clip-2', dimension: 'dialect', targetId: 'valencian', username: 'derivat-de-poblacio', value: 1 });
+      await service.cast({ clipId: 'clip-2', dimension: 'dialect', targetId: 'valencian', username: 'alice', value: 1 });
+      metrics.clipsGoldenTotal.reset();
+      await service.onModuleInit();
+      expect(await golden('dialect')).toBe(0);
+    });
   });
 
   it('weights evaluated/golden hours by clip duration, and totalHours covers every clip regardless of votes', async () => {

@@ -62,7 +62,27 @@ export class MetricsService {
   readonly audioProxyRequestsTotal = new client.Counter({
     name: 'catvoice_audio_proxy_requests_total',
     help: 'Audio proxy requests, by outcome',
-    labelNames: ['outcome'], // ok | not_found | upstream_error
+    labelNames: ['outcome'], // ok | not_found | bad_range | upstream_error
+    registers: [this.registry],
+  });
+
+  readonly audioCacheTotal = new client.Counter({
+    name: 'catvoice_audio_cache_total',
+    help: 'Audio clip lookups in the in-memory cache, by result',
+    labelNames: ['result'], // hit | miss | coalesced (miss = one HuggingFace fetch)
+    registers: [this.registry],
+  });
+
+  readonly audioCacheBytes = new client.Gauge({
+    name: 'catvoice_audio_cache_bytes',
+    help: 'Bytes currently held in the in-memory audio clip cache',
+    registers: [this.registry],
+  });
+
+  readonly audioUpstreamErrorsTotal = new client.Counter({
+    name: 'catvoice_audio_upstream_errors_total',
+    help: 'Failed audio fetches from HuggingFace, by upstream HTTP status (429 = rate limited)',
+    labelNames: ['status'], // HTTP status | timeout | network | incomplete
     registers: [this.registry],
   });
 

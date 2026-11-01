@@ -91,6 +91,22 @@ describe('VoteService', () => {
     expect(valencian).toMatchObject({ netVotes: 2, isGolden: true });
   });
 
+  it('serves stats from a cache and runs one query for concurrent callers', async () => {
+    const compute = jest.spyOn(service as any, 'computeStats');
+
+    await Promise.all([service.stats(), service.stats(), service.stats()]);
+    await service.stats();
+    expect(compute).toHaveBeenCalledTimes(1);
+
+    // Once the snapshot expires, the next call recomputes and sees new votes.
+    jest.spyOn(Date, 'now').mockReturnValue(Date.now() + 301_000);
+    await service.cast({ clipId: 'clip-1', dimension: 'gender', targetId: 'male', username: 'alice', value: 1 });
+    const fresh = await service.stats();
+    expect(compute).toHaveBeenCalledTimes(2);
+    expect(fresh.dimensions.find((d) => d.dimension === 'gender')).toMatchObject({ evaluated: 1 });
+    jest.restoreAllMocks();
+  });
+
   it('excludes scripts/infer_dialect.py\'s bulk-vote username from stats but still counts it in summaryForClip', async () => {
     // Bot suggests a dialect on clip-2 — nobody else has weighed in yet.
     await service.cast({ clipId: 'clip-2', dimension: 'dialect', targetId: 'valencian', username: 'derivat-de-poblacio', value: 1 });

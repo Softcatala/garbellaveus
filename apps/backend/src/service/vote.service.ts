@@ -24,8 +24,21 @@ const SYSTEM_VOTE_USERNAMES = ['derivat-de-poblacio'];
 // Mirrors the "golden" threshold used by summaryForClip/isGolden below.
 const GOLDEN_THRESHOLD = 2;
 
+// stats() scans every non-relevance vote and takes ~1s on production data, and
+// the home page calls it on every visit. Serve a snapshot at most this old.
+const STATS_TTL_MS = 300_000;
+
+export interface VoteStats {
+  dimensions: { dimension: string; evaluated: number; golden: number; evaluatedHours: number; goldenHours: number }[];
+  flaggedIrrelevant: number;
+  totalHours: number;
+}
+
 @Injectable()
 export class VoteService implements OnModuleInit {
+  private statsCache: { value: VoteStats; expiresAt: number } | null = null;
+  private statsInFlight: Promise<VoteStats> | null = null;
+
   constructor(
     @InjectRepository(Vote) private readonly repo: Repository<Vote>,
     @InjectRepository(Clip) private readonly clips: Repository<Clip>,
@@ -215,11 +228,24 @@ export class VoteService implements OnModuleInit {
     return this.repo.find({ where: { clipId, username } });
   }
 
-  async stats(): Promise<{
-    dimensions: { dimension: string; evaluated: number; golden: number; evaluatedHours: number; goldenHours: number }[];
-    flaggedIrrelevant: number;
-    totalHours: number;
-  }> {
+  // Cached for STATS_TTL_MS; concurrent callers on a cold cache share one query
+  // instead of each running their own.
+  async stats(): Promise<VoteStats> {
+    if (this.statsCache && this.statsCache.expiresAt > Date.now()) return this.statsCache.value;
+    if (!this.statsInFlight) {
+      this.statsInFlight = this.computeStats()
+        .then((value) => {
+          this.statsCache = { value, expiresAt: Date.now() + STATS_TTL_MS };
+          return value;
+        })
+        .finally(() => {
+          this.statsInFlight = null;
+        });
+    }
+    return this.statsInFlight;
+  }
+
+  private async computeStats(): Promise<VoteStats> {
     const rows = await this.repo
       .createQueryBuilder('v')
       .innerJoin('v.clip', 'c')

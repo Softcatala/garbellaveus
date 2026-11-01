@@ -1,4 +1,4 @@
-import { Controller, Post, Delete, Get, Body, Query, Param, UseGuards } from '@nestjs/common';
+import { Controller, Header, Post, Delete, Get, Body, Query, Param, UseGuards } from '@nestjs/common';
 import { VoteService } from '../service/vote.service';
 import { ApiKeyGuard } from './api-key.guard';
 import { IsString, IsNotEmpty, IsNumber, IsOptional, IsIn } from 'class-validator';
@@ -40,6 +40,7 @@ export class VoteController {
   }
 
   @Get('stats')
+  @Header('Cache-Control', 'public, max-age=30')
   async stats() {
     return this.service.stats();
   }

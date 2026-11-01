@@ -16,5 +16,8 @@ COPY apps/backend/package.json apps/backend/package.json
 COPY apps/frontend/package.json apps/frontend/package.json
 RUN pnpm install --frozen-lockfile --prod --filter backend
 COPY --from=builder /app/apps/backend/dist ./apps/backend/dist
+# Declared late so a new commit doesn't invalidate the cached install layers above.
+ARG APP_VERSION=dev
+ENV APP_VERSION=$APP_VERSION
 EXPOSE 3000
 CMD ["node", "-r", "./apps/backend/dist/tracing.js", "apps/backend/dist/main"]

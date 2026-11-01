@@ -33,7 +33,7 @@ build-backend:
   extends: .build
   stage: build
   script:
-    - docker build -f apps/backend/Dockerfile --cache-from $CI_REGISTRY_IMAGE/backend:latest --tag $CI_REGISTRY_IMAGE/backend:$CI_COMMIT_SHA --tag $CI_REGISTRY_IMAGE/backend:$DATETAG --tag $CI_REGISTRY_IMAGE/backend:latest .
+    - docker build -f apps/backend/Dockerfile --build-arg APP_VERSION=$CI_COMMIT_SHORT_SHA --cache-from $CI_REGISTRY_IMAGE/backend:latest --tag $CI_REGISTRY_IMAGE/backend:$CI_COMMIT_SHA --tag $CI_REGISTRY_IMAGE/backend:$DATETAG --tag $CI_REGISTRY_IMAGE/backend:latest .
     - docker push $CI_REGISTRY_IMAGE/backend:$CI_COMMIT_SHA
     - docker push $CI_REGISTRY_IMAGE/backend:$DATETAG
     - docker push $CI_REGISTRY_IMAGE/backend:latest

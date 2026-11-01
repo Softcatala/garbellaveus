@@ -20,6 +20,14 @@ async function bootstrap() {
     }),
   );
 
+  // Lets anyone tell which build is live: `curl -I .../api/health`. Registered
+  // before the routes below so it covers them all, /health included.
+  const version = process.env.APP_VERSION || 'dev';
+  app.use((_req: any, res: any, next: () => void) => {
+    res.setHeader('X-App-Version', version);
+    next();
+  });
+
   // Health check endpoint
   const httpAdapter = app.getHttpAdapter();
   httpAdapter.get('/health', (_req: any, res: any) => res.send('ok'));

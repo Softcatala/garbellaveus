@@ -44,12 +44,16 @@ export class SubscriptionService implements OnModuleInit {
   private checkRateLimit(email: string, username: string, now: number): void {
     this.recentRequests = this.recentRequests.filter((t) => now - t < HOUR_MS);
     const keys = [`e:${email}`, `u:${username}`];
-    const limited =
-      this.recentRequests.length >= GLOBAL_HOURLY_CAP ||
-      keys.some((k) => now - (this.lastRequest.get(k) ?? -Infinity) < COOLDOWN_MS);
-    if (limited) {
+    const busy = this.recentRequests.length >= GLOBAL_HOURLY_CAP;
+    const coolingDown = keys.some((k) => now - (this.lastRequest.get(k) ?? -Infinity) < COOLDOWN_MS);
+    if (busy || coolingDown) {
       this.metrics.emailSubscriptionEventsTotal.inc({ event: 'rate_limited' });
-      throw new HttpException('Too many requests', HttpStatus.TOO_MANY_REQUESTS);
+      // `reason` lets the form say whether waiting a minute helps (cooldown) or
+      // not (busy: the hourly cap clears gradually).
+      throw new HttpException(
+        { statusCode: HttpStatus.TOO_MANY_REQUESTS, message: 'Too many requests', reason: busy ? 'busy' : 'cooldown' },
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
     }
     for (const k of keys) this.lastRequest.set(k, now);
     this.recentRequests.push(now);

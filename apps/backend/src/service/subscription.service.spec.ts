@@ -69,6 +69,21 @@ describe('SubscriptionService', () => {
       expect(email.sendQuietly).toHaveBeenCalledTimes(2);
     });
 
+    it('tells a cooldown apart from the global hourly cap', async () => {
+      await service.requestConfirmation('a@b.cat', 'u1');
+      await expect(service.requestConfirmation('a@b.cat', 'u2')).rejects.toMatchObject({
+        status: 429,
+        response: { reason: 'cooldown' },
+      });
+
+      // Fill the hourly cap with distinct addresses and usernames.
+      for (let i = 0; i < 99; i++) await service.requestConfirmation(`fill${i}@b.cat`, `fill${i}`);
+      await expect(service.requestConfirmation('fresh@b.cat', 'fresh')).rejects.toMatchObject({
+        status: 429,
+        response: { reason: 'busy' },
+      });
+    });
+
     it('does not re-send when the address is already confirmed for that username', async () => {
       await service.confirm(createConfirmToken('a@b.cat', 'u1'));
       await service.requestConfirmation('a@b.cat', 'u1');

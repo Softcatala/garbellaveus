@@ -27,10 +27,25 @@ export function EmailPrompt({ username, validations, onDone }: Props) {
       snooze(validations);
       setSent(true);
     } catch (err) {
-      setError(String(err).startsWith('Error: 429') ? t('emailPrompt.tooMany') : t('emailPrompt.error'));
+      setError(errorMessage(err));
     } finally {
       setBusy(false);
     }
+  };
+
+  // 429s carry a `reason`: "busy" is the server-wide hourly cap, where waiting a
+  // minute doesn't help. Anything else (a cooldown, or a limit upstream of the
+  // app that sends no JSON) clears within a minute.
+  const errorMessage = (err: unknown): string => {
+    const text = String(err);
+    if (!text.startsWith('Error: 429')) return t('emailPrompt.error');
+    try {
+      const body = JSON.parse(text.slice(text.indexOf('{')));
+      if (body.reason === 'busy') return t('emailPrompt.busy');
+    } catch {
+      /* not JSON: fall through to the cooldown wording */
+    }
+    return t('emailPrompt.tooMany');
   };
 
   const notNow = () => {

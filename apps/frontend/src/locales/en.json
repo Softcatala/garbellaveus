@@ -323,7 +323,8 @@
     "sentBody": "We've sent a confirmation link to {{email}}. The address won't be saved until you open it.",
     "continue": "Keep evaluating",
     "error": "The email could not be sent. Please try again in a moment.",
-    "tooMany": "Too many requests in a row. Wait a minute and try again."
+    "tooMany": "Too many requests in a row. Wait a minute and try again.",
+    "busy": "There is a lot of demand right now. Please try again a little later."
   },
   "emailConfirm": {
     "title": "Confirm your email",

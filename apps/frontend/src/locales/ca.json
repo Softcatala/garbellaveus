@@ -323,7 +323,8 @@
     "sentBody": "Hem enviat un enllaç de confirmació a {{email}}. L'adreça no es desarà fins que l'obris.",
     "continue": "Continua avaluant",
     "error": "No s'ha pogut enviar el correu. Torna-ho a provar d'aquí a una estona.",
-    "tooMany": "Has fet massa peticions seguides. Espera un minut i torna-ho a provar."
+    "tooMany": "Has fet massa peticions seguides. Espera un minut i torna-ho a provar.",
+    "busy": "Ara mateix hi ha molta demanda. Torna-ho a provar d'aquí a una estona."
   },
   "emailConfirm": {
     "title": "Confirma el teu correu",

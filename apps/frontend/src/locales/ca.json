@@ -1,6 +1,8 @@
 {
   "audioPlayer": {
-    "fallback": "El teu navegador no admet l'element d'àudio."
+    "fallback": "El teu navegador no admet l'element d'àudio.",
+    "error": "No s'ha pogut carregar l'àudio. Torna-ho a provar o salta al clip següent. No es pot votar fins que l'àudio es reprodueixi.",
+    "retry": "Torna-ho a provar"
   },
   "header": {
     "by": "un projecte de Softcatalà"

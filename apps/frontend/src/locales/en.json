@@ -1,6 +1,8 @@
 {
   "audioPlayer": {
-    "fallback": "Your browser does not support the audio element."
+    "fallback": "Your browser does not support the audio element.",
+    "error": "Could not load this audio. Retry, or skip to the next clip. Voting is disabled until the audio plays.",
+    "retry": "Retry"
   },
   "header": {
     "by": "a Softcatalà project"

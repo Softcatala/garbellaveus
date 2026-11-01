@@ -11,10 +11,15 @@ export interface FlagDefinition {
   description: string;
 }
 
-// No flags at the moment. To ship something dark, add it here, gate the code
-// with `isEnabled('name')`, and switch it on per browser at ROUTES.flags:
+// To ship something dark, add it here, gate the code with `isEnabled('name')`,
+// and switch it on per browser at ROUTES.flags:
 //   myFeature: { label: 'My feature', description: 'What it does.' },
-export const FLAGS: Record<string, FlagDefinition> = {};
+export const FLAGS: Record<string, FlagDefinition> = {
+  simulateAudioError: {
+    label: "Simula un error d'àudio",
+    description: "Tots els reproductors fallen com si HuggingFace no respongués, per veure què passa a l'avaluació.",
+  },
+};
 
 export type FlagName = string;
 

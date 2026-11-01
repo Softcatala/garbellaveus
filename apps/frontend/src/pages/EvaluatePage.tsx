@@ -58,6 +58,9 @@ export function EvaluatePage({ username }: Props) {
   const [done, setDone] = useState(false);
   const [loading, setLoading] = useState(false);
   const [voting, setVoting] = useState(false);
+  // The clip whose audio failed to load. Voting on it is held back (nobody can
+  // judge a clip they couldn't hear); Skip stays available.
+  const [audioFailedClipId, setAudioFailedClipId] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [selectedTranscriptionId, setSelectedTranscriptionId] = useState<number | null>(null);
   // Two-step transcription flow, mirroring dialect's picker: "Incorrect" opens
@@ -211,11 +214,14 @@ export function EvaluatePage({ username }: Props) {
     if (state && flowStartIdxRef.current === null) flowStartIdxRef.current = window.history.state?.idx ?? 0;
   }, [state]);
 
+  const audioBlocked = state != null && audioFailedClipId === state.clip.clipId;
+
   const canGoBack = flowStartIdxRef.current !== null && historyIdx > flowStartIdxRef.current;
 
   const skip = () => {
     if (state) {
-      addSkipped(state.clip.clipId);
+      // A clip skipped only because its audio failed shouldn't be hidden for good.
+      if (!audioBlocked) addSkipped(state.clip.clipId);
       loadNext([state.clip.clipId]);
     }
   };
@@ -290,7 +296,7 @@ export function EvaluatePage({ username }: Props) {
   };
 
   const vote = async (value: 1 | -1) => {
-    if (!state || voting) return;
+    if (!state || voting || audioBlocked) return;
 
     // Dialect has more than two possible values, so "incorrect" doesn't imply a
     // specific alternative — ask the evaluator to pick the right one first.
@@ -379,7 +385,7 @@ export function EvaluatePage({ username }: Props) {
   };
 
   const saveCorrection = async () => {
-    if (!state || voting) return;
+    if (!state || voting || audioBlocked) return;
     const corrected = editText.trim();
     if (!corrected) return;
     setVoting(true);
@@ -398,7 +404,7 @@ export function EvaluatePage({ username }: Props) {
   // buttons, let the evaluator suggest one from scratch. Just a single upvote:
   // there's no existing candidate to downvote.
   const suggestDialect = async () => {
-    if (!state || voting || !selectedDialect) return;
+    if (!state || voting || audioBlocked || !selectedDialect) return;
     setVoting(true);
     try {
       await castVote({ clipId: state.clip.clipId, dimension: 'dialect', targetId: selectedDialect, username, value: 1 });
@@ -593,7 +599,11 @@ export function EvaluatePage({ username }: Props) {
 
             {/* Audio player */}
             {state.clip.tarFile != null ? (
-              <AudioPlayer src={api.audioUrl(state.clip.clipId)} autoPlay />
+              <AudioPlayer
+                src={api.audioUrl(state.clip.clipId)}
+                autoPlay
+                onFailedChange={(failed) => setAudioFailedClipId(failed ? state.clip.clipId : null)}
+              />
             ) : (
               <div className="bg-gray-50 rounded-lg p-3 text-sm text-gray-500 text-center">
                 {t('evaluate.audioNotIndexed')}
@@ -647,9 +657,9 @@ export function EvaluatePage({ username }: Props) {
                   <div className="grid grid-cols-2 gap-3 mt-3">
                     <button
                       onClick={saveCorrection}
-                      disabled={voting || !trimmedEdit || trimmedEdit === originalText}
+                      disabled={voting || audioBlocked || !trimmedEdit || trimmedEdit === originalText}
                       className={`px-2 py-2.5 rounded-lg transition font-semibold text-sm sm:text-base ${
-                        voting || !trimmedEdit || trimmedEdit === originalText
+                        voting || audioBlocked || !trimmedEdit || trimmedEdit === originalText
                           ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                           : 'bg-green-600 hover:bg-green-700 text-white'
                       }`}
@@ -762,7 +772,7 @@ export function EvaluatePage({ username }: Props) {
                   <div className="flex gap-2 mt-3">
                     <button
                       onClick={() => vote(-1)}
-                      disabled={!selectedDialect || voting}
+                      disabled={!selectedDialect || voting || audioBlocked}
                       className="flex-1 bg-brand-600 hover:bg-brand-700 disabled:opacity-40 text-white font-semibold py-2 rounded-lg transition"
                     >
                       {t('evaluate.recordDialect')}
@@ -797,7 +807,7 @@ export function EvaluatePage({ username }: Props) {
                   <div className="flex gap-2 mt-3">
                     <button
                       onClick={suggestDialect}
-                      disabled={!selectedDialect || voting}
+                      disabled={!selectedDialect || voting || audioBlocked}
                       className="flex-1 bg-brand-600 hover:bg-brand-700 disabled:opacity-40 text-white font-semibold py-2 rounded-lg transition"
                     >
                       {t('evaluate.suggestDialect')}
@@ -822,14 +832,14 @@ export function EvaluatePage({ username }: Props) {
             <div className="flex gap-3">
               <button
                 onClick={() => vote(1)}
-                disabled={voting || (dimension === 'transcription' && !originalText.trim()) || (dimension === 'gender' && !genderResolved.value)}
+                disabled={voting || audioBlocked || (dimension === 'transcription' && !originalText.trim()) || (dimension === 'gender' && !genderResolved.value)}
                 className="flex-1 bg-green-600 hover:bg-green-700 disabled:opacity-40 text-white font-semibold py-3 px-2 rounded-xl transition flex items-center justify-center gap-2 text-sm sm:text-base leading-tight text-center"
               >
                 {correctLabel}
               </button>
               <button
                 onClick={() => vote(-1)}
-                disabled={voting || (dimension === 'transcription' && !originalText.trim()) || (dimension === 'gender' && !genderResolved.value)}
+                disabled={voting || audioBlocked || (dimension === 'transcription' && !originalText.trim()) || (dimension === 'gender' && !genderResolved.value)}
                 className="flex-1 bg-red-500 hover:bg-red-600 disabled:opacity-40 text-white font-semibold py-3 px-2 rounded-xl transition flex items-center justify-center gap-2 text-sm sm:text-base leading-tight text-center"
               >
                 {incorrectLabel}

@@ -1,7 +1,7 @@
 import { Test } from '@nestjs/testing';
 import { TypeOrmModule, getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { ClipService } from './clip.service';
+import { ClipService, MIN_SEARCH_LENGTH, SEARCH_COUNT_CAP } from './clip.service';
 import { Clip } from '../domain/clip.entity';
 import { Transcription } from '../domain/transcription.entity';
 import { Vote } from '../domain/vote.entity';
@@ -32,6 +32,73 @@ describe('ClipService', () => {
     clips = module.get(getRepositoryToken(Clip));
     votes = module.get(getRepositoryToken(Vote));
     transcriptions = module.get(getRepositoryToken(Transcription));
+  });
+
+  describe('list search', () => {
+    beforeEach(async () => {
+      await clips.save([
+        clips.create({ clipId: 'a1', candidate1: 'una casa blanca' }),
+        clips.create({ clipId: 'a2', candidate2: 'la CASA gran' }),
+        clips.create({ clipId: 'a3', candidate1: 'un carrer' }),
+      ]);
+    });
+
+    it('finds substrings in either candidate and reports an exact total', async () => {
+      const res = await service.list('casa', 1, 20);
+      expect(res.items.map((i) => i.clip.clipId)).toEqual(['a1', 'a2']);
+      expect(res.total).toBe(2);
+      expect(res.totalCapped).toBe(false);
+    });
+
+    it(`ignores terms shorter than ${MIN_SEARCH_LENGTH} characters and lists everything`, async () => {
+      const res = await service.list('ca', 1, 20);
+      expect(res.items).toHaveLength(3);
+      expect(res.total).toBe(3);
+      expect(res.totalCapped).toBe(false);
+    });
+
+    // One INSERT of ~1000 rows exceeds SQLite's expression depth limit.
+    async function insertMatching(count: number) {
+      for (let from = 0; from < count; from += 100) {
+        const rows = Array.from({ length: Math.min(100, count - from) }, (_, i) =>
+          clips.create({ clipId: `bulk-${from + i}`, candidate1: 'xilòfon' }),
+        );
+        await clips.insert(rows);
+      }
+    }
+
+    it('treats a whitespace-only or padded term by its trimmed length', async () => {
+      expect((await service.list('   ', 1, 20)).total).toBe(3);
+      expect((await service.list(' casa ', 1, 20)).total).toBe(2);
+    });
+
+    it('reports an exact total when the last page is short, and when nothing matches', async () => {
+      expect((await service.list('casa', 1, 5)).total).toBe(2);
+      expect((await service.list('casa', 2, 1)).total).toBe(2);
+      expect((await service.list('inexistent', 1, 20)).total).toBe(0);
+      expect((await service.list('casa', 9, 20)).total).toBe(2);
+    });
+
+    it('still pages through results beyond the first page', async () => {
+      const res = await service.list('casa', 2, 1);
+      expect(res.items.map((i) => i.clip.clipId)).toEqual(['a2']);
+      expect(res.total).toBe(2);
+    });
+
+    it(`caps the total at ${SEARCH_COUNT_CAP} and flags it`, async () => {
+      await insertMatching(SEARCH_COUNT_CAP + 1);
+      const res = await service.list('xilòfon', 1, 20);
+      expect(res.items).toHaveLength(20);
+      expect(res.total).toBe(SEARCH_COUNT_CAP);
+      expect(res.totalCapped).toBe(true);
+    });
+
+    it('does not flag a result set that is exactly at the cap', async () => {
+      await insertMatching(SEARCH_COUNT_CAP);
+      const res = await service.list('xilòfon', 1, 20);
+      expect(res.total).toBe(SEARCH_COUNT_CAP);
+      expect(res.totalCapped).toBe(false);
+    });
   });
 
   describe('nextForEvaluation dialect priority', () => {

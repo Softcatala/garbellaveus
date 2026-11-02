@@ -18,7 +18,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export const api = {
   listClips: (search: string, page: number, limit = 20) =>
-    request<{ items: ClipWithBest[]; total: number }>(
+    request<{ items: ClipWithBest[]; total: number; totalCapped: boolean }>(
       `/clips?search=${encodeURIComponent(search)}&page=${page}&limit=${limit}`,
     ),
 

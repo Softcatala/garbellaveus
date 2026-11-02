@@ -25,6 +25,18 @@ export const IRRELEVANT_REASONS = [
 ] as const;
 export type IrrelevantReason = (typeof IRRELEVANT_REASONS)[number];
 
+// A search is a substring scan of every clip, so shorter terms match most of
+// the table and are ignored, and counting matches stops at the cap.
+export const MIN_SEARCH_LENGTH = 3;
+export const SEARCH_COUNT_CAP = 1000;
+
+export interface ClipPage {
+  items: ClipWithBest[];
+  total: number;
+  // True when a search matched more than SEARCH_COUNT_CAP clips, so `total` is a lower bound.
+  totalCapped: boolean;
+}
+
 @Injectable()
 export class ClipService {
   constructor(
@@ -35,24 +47,34 @@ export class ClipService {
     private readonly metrics: MetricsService,
   ) {}
 
-  async list(search: string, page: number, limit: number): Promise<{ items: ClipWithBest[]; total: number }> {
-    const where = search
-      ? [
-          { candidate1: Like(`%${search}%`) },
-          { candidate2: Like(`%${search}%`) },
-          { clipId: Like(`%${search}%`) },
-        ]
-      : undefined;
+  async list(search: string, page: number, limit: number): Promise<ClipPage> {
+    const term = search.trim();
+    const skip = (page - 1) * limit;
 
-    const [clips, total] = await this.clips.findAndCount({
-      where,
-      skip: (page - 1) * limit,
-      take: limit,
-      order: { clipId: 'ASC' },
-    });
+    if (term.length < MIN_SEARCH_LENGTH) {
+      const [clips, total] = await this.clips.findAndCount({ skip, take: limit, order: { clipId: 'ASC' } });
+      return { items: await Promise.all(clips.map((c) => this.enrichClip(c))), total, totalCapped: false };
+    }
 
+    const pattern = `%${term}%`;
+    const where = [{ candidate1: Like(pattern) }, { candidate2: Like(pattern) }, { clipId: Like(pattern) }];
+    const clips = await this.clips.find({ where, skip, take: limit, order: { clipId: 'ASC' } });
+
+    // A short page means the scan ran to the end, so the total is known without a second scan.
+    // Only a full page, or an empty page past the first, leaves it unknown.
+    let n = skip + clips.length;
+    if (clips.length === limit || (clips.length === 0 && page > 1)) {
+      const [{ n: counted }] = await this.clips.query(
+        `SELECT COUNT(*) AS n FROM (
+           SELECT 1 FROM clips WHERE candidate_1 LIKE ?1 OR candidate_2 LIKE ?1 OR clip_id LIKE ?1 LIMIT ?2
+         )`,
+        [pattern, SEARCH_COUNT_CAP + 1],
+      );
+      n = counted;
+    }
+    const totalCapped = n > SEARCH_COUNT_CAP;
     const items = await Promise.all(clips.map((c) => this.enrichClip(c)));
-    return { items, total };
+    return { items, total: totalCapped ? SEARCH_COUNT_CAP : n, totalCapped };
   }
 
   async findOne(clipId: string): Promise<ClipWithBest> {

@@ -27,6 +27,7 @@
     "clips": "{{count}} clips",
     "evaluate": "Evaluate →",
     "searchPlaceholder": "Search transcriptions or clip ID…",
+    "searchMinChars": "Type at least {{count}} characters to search.",
     "loading": "Loading…",
     "evaluated": "evaluated",
     "golden": "validated",

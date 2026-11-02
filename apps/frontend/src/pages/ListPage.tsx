@@ -12,16 +12,21 @@ export function ListPage() {
   const [page, setPage] = useState(1);
   const [items, setItems] = useState<ClipWithBest[]>([]);
   const [total, setTotal] = useState(0);
+  const [totalCapped, setTotalCapped] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const LIMIT = 20;
   const SEARCH_DEBOUNCE_MS = 400;
+  // Mirrors MIN_SEARCH_LENGTH in the backend, which ignores shorter terms.
+  const MIN_SEARCH_LENGTH = 3;
 
   // Searching scans every clip on the server, so wait for typing to pause.
   const [debouncedSearch, setDebouncedSearch] = useState('');
   useEffect(() => {
-    const id = setTimeout(() => setDebouncedSearch(search), SEARCH_DEBOUNCE_MS);
+    const term = search.trim();
+    const effective = term.length >= MIN_SEARCH_LENGTH ? term : '';
+    const id = setTimeout(() => setDebouncedSearch(effective), SEARCH_DEBOUNCE_MS);
     return () => clearTimeout(id);
   }, [search]);
 
@@ -34,6 +39,7 @@ export function ListPage() {
         if (stale) return;
         setItems(data.items);
         setTotal(data.total);
+        setTotalCapped(data.totalCapped);
       })
       .catch((e) => { if (!stale) setError(String(e)); })
       .finally(() => { if (!stale) setLoading(false); });
@@ -49,7 +55,7 @@ export function ListPage() {
       </div>
 
       <h1 className="text-2xl font-bold text-gray-800 mb-6">
-        {t('list.title')} <span className="text-gray-400 font-normal text-base">— {t('list.clips', { count: total.toLocaleString(i18n.resolvedLanguage) })}</span>
+        {t('list.title')} <span className="text-gray-400 font-normal text-base">— {t('list.clips', { count: total.toLocaleString(i18n.resolvedLanguage) + (totalCapped ? '+' : '') })}</span>
       </h1>
 
       <div className="relative mb-4">
@@ -62,6 +68,10 @@ export function ListPage() {
         />
         <span className="absolute left-3 top-2.5 text-gray-400">🔍</span>
       </div>
+
+      {search.trim().length > 0 && search.trim().length < MIN_SEARCH_LENGTH && (
+        <div className="text-gray-400 text-sm mb-4">{t('list.searchMinChars', { count: MIN_SEARCH_LENGTH })}</div>
+      )}
 
       {error && <div className="text-red-500 text-sm mb-4">{error}</div>}
 

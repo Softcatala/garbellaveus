@@ -27,6 +27,7 @@
     "clips": "{{count}} clips",
     "evaluate": "Avaluar →",
     "searchPlaceholder": "Cercar transcripcions o ID de clip…",
+    "searchMinChars": "Escriviu almenys {{count}} caràcters per cercar.",
     "loading": "Carregant…",
     "evaluated": "avaluats",
     "golden": "validats",

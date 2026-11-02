@@ -1,7 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
 import { Clip } from './clip.entity';
 
 @Entity('transcriptions')
+// Every clip lookup (Explore list, clip detail, voting) filters on clip_id;
+// without this each one scans the whole table.
+@Index(['clipId'])
 export class Transcription {
   @PrimaryGeneratedColumn()
   id: number;

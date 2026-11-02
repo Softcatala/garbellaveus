@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api';
@@ -16,22 +16,29 @@ export function ListPage() {
   const [error, setError] = useState('');
 
   const LIMIT = 20;
+  const SEARCH_DEBOUNCE_MS = 400;
 
-  const load = useCallback(async () => {
+  // Searching scans every clip on the server, so wait for typing to pause.
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  useEffect(() => {
+    const id = setTimeout(() => setDebouncedSearch(search), SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(id);
+  }, [search]);
+
+  useEffect(() => {
+    let stale = false;
     setLoading(true);
     setError('');
-    try {
-      const data = await api.listClips(search, page, LIMIT);
-      setItems(data.items);
-      setTotal(data.total);
-    } catch (e) {
-      setError(String(e));
-    } finally {
-      setLoading(false);
-    }
-  }, [search, page]);
-
-  useEffect(() => { load(); }, [load]);
+    api.listClips(debouncedSearch, page, LIMIT)
+      .then((data) => {
+        if (stale) return;
+        setItems(data.items);
+        setTotal(data.total);
+      })
+      .catch((e) => { if (!stale) setError(String(e)); })
+      .finally(() => { if (!stale) setLoading(false); });
+    return () => { stale = true; };
+  }, [debouncedSearch, page]);
 
   const totalPages = Math.max(1, Math.ceil(total / LIMIT));
 

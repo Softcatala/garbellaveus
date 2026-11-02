@@ -1,0 +1,12 @@
+{
+  "name": "garbellaveus-fat",
+  "private": true,
+  "description": "Functional acceptance tests (Gherkin) for a deployed GarbellaVeus",
+  "scripts": {
+    "fat": "cucumber-js",
+    "fat:readonly": "cucumber-js --tags 'not @writes'"
+  },
+  "devDependencies": {
+    "@cucumber/cucumber": "^11.3.0"
+  }
+}

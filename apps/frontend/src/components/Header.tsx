@@ -8,7 +8,7 @@ export function Header() {
     <header className="bg-white border-b border-gray-100">
       <div className="max-w-5xl mx-auto px-4 py-3 flex items-center gap-2.5">
         <Link to="/" className="flex items-center gap-2.5">
-          <img src="/sc-icon.png" alt="Softcatalà" className="w-8 h-8 rounded-full" />
+          <img src="/logo.svg" alt="GarbellaVeus" className="w-8 h-8 rounded-lg" />
           <span className="font-bold text-gray-800">{t('home.title')}</span>
         </Link>
         <span className="text-gray-200">·</span>

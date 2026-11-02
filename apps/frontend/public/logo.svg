@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:cc="http://creativecommons.org/ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:c2pa="http://c2pa.org/manifest" viewBox="0 0 512 512" width="512" height="512" version="1.1" id="svg49">
+  <defs id="defs49"></defs>
+  <metadata id="metadata1"></metadata>
+  <title id="title1">Garbellaveus</title>
+  <rect width="512" height="512" fill="#8A0000" id="rect1"></rect>
+  <circle cx="106" cy="106" r="8" fill="#BA2626" id="circle1" style="fill:#db5454;fill-opacity:1"></circle>
+  <circle cx="106" cy="158" r="8" fill="#BA2626" id="circle2" style="fill:#db5454;fill-opacity:1"></circle>
+  <circle cx="106" cy="210" r="8" fill="#ba2626" id="circle2-2" style="fill:#db5454;fill-opacity:1"></circle>
+  <circle cx="158" cy="158" r="8" fill="#ba2626" id="circle2-9" style="fill:#db5454;fill-opacity:1"></circle>
+  <circle cx="106" cy="262" r="15" fill="#FF8000" id="circle4" style="fill:#ffffff;fill-opacity:1"></circle>
+  <circle cx="106" cy="366" r="8" fill="#BA2626" id="circle6" style="fill:#db5454;fill-opacity:1"></circle>
+  <circle cx="106" cy="418" r="8" fill="#BA2626" id="circle7" style="fill:#db5454;fill-opacity:1"></circle>
+  <circle cx="158" cy="106" r="8" fill="#BA2626" id="circle8" style="fill:#db5454;fill-opacity:1"></circle>
+  <circle cx="158" cy="210" r="15" fill="#FF8000" id="circle10"></circle>
+  <circle cx="158" cy="262" r="15" fill="#FF8000" id="circle11" style="fill:#ffffff;fill-opacity:1"></circle>
+  <circle cx="158" cy="314" r="15" fill="#FF8000" id="circle12"></circle>
+  <circle cx="158" cy="418" r="8" fill="#BA2626" id="circle14" style="fill:#db5454;fill-opacity:1"></circle>
+  <circle cx="158" cy="366" r="8" fill="#ba2626" id="circle14-5" style="fill:#db5454;fill-opacity:1"></circle>
+  <circle cx="210" cy="106" r="15" fill="#FF8000" id="circle15"></circle>
+  <circle cx="210" cy="158" r="15" fill="#FF8000" id="circle16"></circle>
+  <circle cx="210" cy="210" r="15" fill="#FF8000" id="circle17"></circle>
+  <circle cx="210" cy="262" r="15" fill="#FF8000" id="circle18" style="fill:#ffffff;fill-opacity:1"></circle>
+  <circle cx="210" cy="314" r="15" fill="#FF8000" id="circle19"></circle>
+  <circle cx="210" cy="366" r="15" fill="#FF8000" id="circle20"></circle>
+  <circle cx="210" cy="418" r="15" fill="#FF8000" id="circle21"></circle>
+  <circle cx="262" cy="106" r="8" fill="#BA2626" id="circle22" style="fill:#db5454;fill-opacity:1"></circle>
+  <circle cx="262" cy="210" r="15" fill="#FF8000" id="circle24"></circle>
+  <circle cx="262" cy="262" r="15" fill="#FF8000" id="circle25" style="fill:#ffffff;fill-opacity:1"></circle>
+  <circle cx="262" cy="314" r="15" fill="#FF8000" id="circle26"></circle>
+  <circle cx="262" cy="418" r="8" fill="#BA2626" id="circle28" style="fill:#db5454;fill-opacity:1"></circle>
+  <circle cx="314" cy="106" r="8" fill="#BA2626" id="circle29" style="fill:#db5454;fill-opacity:1"></circle>
+  <circle cx="314" cy="210" r="15" fill="#FF8000" id="circle31"></circle>
+  <circle cx="314" cy="262" r="15" fill="#FF8000" id="circle32" style="fill:#ffffff;fill-opacity:1"></circle>
+  <circle cx="314" cy="314" r="15" fill="#FF8000" id="circle33"></circle>
+  <circle cx="262" cy="366" r="15" fill="#ff8000" id="circle33-2"></circle>
+  <circle cx="314" cy="366" r="8" fill="#ba2626" id="circle41-8" style="fill:#db5454;fill-opacity:1"></circle>
+  <circle cx="314" cy="418" r="8" fill="#BA2626" id="circle35" style="fill:#db5454;fill-opacity:1"></circle>
+  <circle cx="366" cy="106" r="8" fill="#BA2626" id="circle36" style="fill:#db5454;fill-opacity:1"></circle>
+  <circle cx="366" cy="158" r="8" fill="#BA2626" id="circle37" style="fill:#db5454;fill-opacity:1"></circle>
+  <circle cx="314" cy="158" r="8" fill="#ba2626" id="circle37-6" style="fill:#db5454;fill-opacity:1"></circle>
+  <circle cx="366" cy="210" r="8" fill="#BA2626" id="circle38" style="fill:#db5454;fill-opacity:1"></circle>
+  <circle cx="366" cy="262" r="15" fill="#FF8000" id="circle39" style="fill:#ffffff;fill-opacity:1"></circle>
+  <circle cx="366" cy="314" r="8" fill="#BA2626" id="circle40" style="fill:#db5454;fill-opacity:1"></circle>
+  <circle cx="366" cy="366" r="8" fill="#BA2626" id="circle41" style="fill:#db5454;fill-opacity:1"></circle>
+  <circle cx="366" cy="418" r="8" fill="#BA2626" id="circle42" style="fill:#db5454;fill-opacity:1"></circle>
+  <circle cx="418" cy="106" r="8" fill="#BA2626" id="circle43" style="fill:#db5454;fill-opacity:1"></circle>
+  <circle cx="418" cy="158" r="8" fill="#BA2626" id="circle44" style="fill:#db5454;fill-opacity:1"></circle>
+  <circle cx="418" cy="210" r="15" fill="#FF8000" id="circle45"></circle>
+  <circle cx="418" cy="262" r="15" fill="#FF8000" id="circle46" style="fill:#ffffff;fill-opacity:1"></circle>
+  <circle cx="418" cy="314" r="15" fill="#FF8000" id="circle47"></circle>
+  <circle cx="418" cy="366" r="8" fill="#BA2626" id="circle48" style="fill:#db5454;fill-opacity:1"></circle>
+  <circle cx="418" cy="418" r="8" fill="#BA2626" id="circle49" style="fill:#db5454;fill-opacity:1"></circle>
+  <circle cx="106" cy="314" r="8" fill="#ba2626" id="circle2-22" style="fill:#db5454;fill-opacity:1"></circle>
+  <circle cx="262" cy="158" r="15" fill="#ff8000" id="circle30-5"></circle>
+</svg>

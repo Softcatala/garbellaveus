@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 480">
+<rect width="480" height="480" fill="#8a0000"/>
+<circle cx="180" cy="60" r="26" fill="#ff8000"/>
+<circle cx="180" cy="120" r="26" fill="#ff8000"/>
+<circle cx="240" cy="120" r="26" fill="#ff8000"/>
+<circle cx="120" cy="180" r="26" fill="#ff8000"/>
+<circle cx="180" cy="180" r="26" fill="#ff8000"/>
+<circle cx="240" cy="180" r="26" fill="#ff8000"/>
+<circle cx="300" cy="180" r="26" fill="#ff8000"/>
+<circle cx="420" cy="180" r="26" fill="#ff8000"/>
+<circle cx="60" cy="240" r="26" fill="#fff"/>
+<circle cx="120" cy="240" r="26" fill="#fff"/>
+<circle cx="180" cy="240" r="26" fill="#fff"/>
+<circle cx="240" cy="240" r="26" fill="#fff"/>
+<circle cx="300" cy="240" r="26" fill="#fff"/>
+<circle cx="360" cy="240" r="26" fill="#fff"/>
+<circle cx="420" cy="240" r="26" fill="#fff"/>
+<circle cx="120" cy="300" r="26" fill="#ff8000"/>
+<circle cx="180" cy="300" r="26" fill="#ff8000"/>
+<circle cx="240" cy="300" r="26" fill="#ff8000"/>
+<circle cx="300" cy="300" r="26" fill="#ff8000"/>
+<circle cx="420" cy="300" r="26" fill="#ff8000"/>
+<circle cx="180" cy="360" r="26" fill="#ff8000"/>
+<circle cx="240" cy="360" r="26" fill="#ff8000"/>
+<circle cx="180" cy="420" r="26" fill="#ff8000"/>
+</svg>
